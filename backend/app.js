@@ -2,14 +2,13 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 app.use(express.json());
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const mongoUrl = 'mongodb+srv://dearahmbarsolasco:1234@cluster0.2sq5a.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 const JWT_SECRET = 'vX5&%78$ABdf!1zqL#RW9dcpQYx2UKeT3J4o*hg6@mnNpOw';
-
-const deckRoutes = require('./deckRoute');
 
 mongoose.connect(mongoUrl).then(() => {
     console.log('Connected to MongoDB');
@@ -68,7 +67,7 @@ app.post("/login-user", async(req, res)=>{
 
 })
 
-// Deck routes
+const deckRoutes = require('./deckRoute');
 app.use('/api/decks', deckRoutes);
 
 app.listen(3000, () => {
