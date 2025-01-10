@@ -49,9 +49,6 @@ export default function RootLayout() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpPage} />
       <Stack.Screen name="Tabs" component={TabLayout} />
-      
-       {/* Add FolderScreen and DeckScreen to your stack */}
-       {/* <Stack.Screen name="Folder" component={FolderScreen} /> */}
       <Stack.Screen name="Deck" component={DeckScreen} />
     </Stack.Navigator>
   );
