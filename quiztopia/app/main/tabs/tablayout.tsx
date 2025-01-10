@@ -11,27 +11,43 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './home';
 import ProgressScreen from './progress';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function TabLayout({ navigation }: { navigation: any }) {
+  
   const [currentTab, setCurrentTab] = useState('Home');
   const [isModalVisible, setModalVisible] = useState(false);
   const [deckTitle, setDeckTitle] = useState('');
-  const addDeck = async () => {
-    if (!deckTitle.trim()) {
-        alert('Please enter a deck title');
-        return;
-    }
 
-    try {
-        const response = await axios.post('http://192.168.1.9:3000/api/decks/add-deck', {
-            title: deckTitle,
-        });
-        setModalVisible(false);
-        navigation.navigate('Deck', { title: response.data.deck._id });
-    } catch (error) {
-        console.log('Error creating deck:', error);
+
+const addDeck = async () => {
+  if (!deckTitle) {
+    alert('Deck name is required');
+    return;
+  }
+
+  try {
+    const token = await AsyncStorage.getItem('userToken'); // Assuming you're storing tokens
+    const response = await axios.post(
+      'http://localhost:3000/api/decks/create-deck',
+      { title: deckTitle },
+      { headers: { 'x-access-token': token } }
+    );
+
+    if (response.data.status === 'ok') {
+      alert('Deck created successfully!');
+      setDeckTitle('');
+      setModalVisible(false);
+    } else {
+      alert(response.data.data);
     }
+  } catch (err) {
+    console.error(err);
+    alert('Error creating deck');
+  }
 };
+
   const renderScreen = () => {
     switch (currentTab) {
       case 'Home':
@@ -55,16 +71,7 @@ function TabLayout({ navigation }: { navigation: any }) {
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-   {/* <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate('Folder');
-                  }}
-                >
-                  <Ionicons name="folder-open-outline" size={20} color="#5A189A" />
-                  <Text style={styles.modalOptionText}>Add Folder</Text>
-                </TouchableOpacity>*/}     
+  
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
@@ -80,16 +87,11 @@ function TabLayout({ navigation }: { navigation: any }) {
                   />
                   </View>
 
-                <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate('Deck', { title: deckTitle });
-                }}
-                >
+                  <TouchableOpacity style={styles.modalOption} onPress={addDeck}>
                   <Ionicons name="albums-outline" size={20} color="#5A189A" />
                   <Text style={styles.modalOptionText}>Add Deck</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+
               </View>
             </TouchableWithoutFeedback>
           </View>
