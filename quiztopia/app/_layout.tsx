@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs, Stack } from 'expo-router';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage for authentication state storage
 import LoginScreen from './auth/login';
 import SignUpPage from './auth/signup';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TabLayout from './main/tabs/tablayout';
+//import FolderScreen from './main/flashcards/folderscreen';
+import DeckScreen from './main/flashcards/deckscreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,7 +41,7 @@ export default function RootLayout() {
 
   return (
     <Stack.Navigator
-      initialRouteName={isAuthenticated ? "Tabs" : "Login"} // Dynamically set the initial route
+      initialRouteName={isAuthenticated ? 'Tabs' : 'Login'} // Dynamically set the initial route
       screenOptions={{
         headerShown: false,
       }}
@@ -48,6 +49,10 @@ export default function RootLayout() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpPage} />
       <Stack.Screen name="Tabs" component={TabLayout} />
+      
+       {/* Add FolderScreen and DeckScreen to your stack */}
+       {/* <Stack.Screen name="Folder" component={FolderScreen} /> */}
+      <Stack.Screen name="Deck" component={DeckScreen} />
     </Stack.Navigator>
   );
 }
