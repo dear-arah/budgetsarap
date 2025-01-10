@@ -6,8 +6,8 @@ const flashcardSchema = new mongoose.Schema({
 });
 
 const deckSchema = new mongoose.Schema({
-    title: { type: String, required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'UserInfo', required: true },
+    title: { type: String, required: true },
     flashcards: [flashcardSchema],
 });
 
