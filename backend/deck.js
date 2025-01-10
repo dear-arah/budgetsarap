@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
-
 const flashcardSchema = new mongoose.Schema({
     question: { type: String, required: true },
     answer: { type: String, required: true },
 });
 
 const deckSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'UserInfo', required: true },
+    userEmail: { type: String, required: true },
     title: { type: String, required: true },
     flashcards: [flashcardSchema],
 });
