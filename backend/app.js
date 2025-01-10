@@ -9,6 +9,8 @@ const mongoUrl = 'mongodb+srv://dearahmbarsolasco:1234@cluster0.2sq5a.mongodb.ne
 
 const JWT_SECRET = 'vX5&%78$ABdf!1zqL#RW9dcpQYx2UKeT3J4o*hg6@mnNpOw';
 
+const deckRoutes = require('./deckRoute');
+
 mongoose.connect(mongoUrl).then(() => {
     console.log('Connected to MongoDB');
 }).catch((err) => {
@@ -65,6 +67,9 @@ app.post("/login-user", async(req, res)=>{
     }
 
 })
+
+// Deck routes
+app.use('/api/decks', deckRoutes);
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');

@@ -9,15 +9,29 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 import HomeScreen from './home';
 import ProgressScreen from './progress';
-
 
 function TabLayout({ navigation }: { navigation: any }) {
   const [currentTab, setCurrentTab] = useState('Home');
   const [isModalVisible, setModalVisible] = useState(false);
+  const [deckTitle, setDeckTitle] = useState('');
+  const addDeck = async () => {
+    if (!deckTitle.trim()) {
+        alert('Please enter a deck title');
+        return;
+    }
 
+    try {
+        const response = await axios.post('http://192.168.1.9:3000/api/decks/add-deck', {
+            title: deckTitle,
+        });
+        setModalVisible(false);
+        navigation.navigate('Deck', { title: response.data.deck._id });
+    } catch (error) {
+        console.log('Error creating deck:', error);
+    }
+};
   const renderScreen = () => {
     switch (currentTab) {
       case 'Home':
@@ -56,17 +70,22 @@ function TabLayout({ navigation }: { navigation: any }) {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
               <Text> Name for Your Deck:</Text>
-              
+
                   <View style={styles.action}>
-                  <TextInput placeholder="English Lecture 1..." style={styles.textInput}></TextInput>
+                  <TextInput
+                      placeholder="Enter Deck Name"
+                      style={styles.textInput}
+                      value={deckTitle}
+                      onChangeText={setDeckTitle}
+                  />
                   </View>
 
                 <TouchableOpacity
                   style={styles.modalOption}
                   onPress={() => {
                     setModalVisible(false);
-                    navigation.navigate('Deck');
-                  }}
+                    navigation.navigate('Deck', { title: deckTitle });
+                }}
                 >
                   <Ionicons name="albums-outline" size={20} color="#5A189A" />
                   <Text style={styles.modalOptionText}>Add Deck</Text>
