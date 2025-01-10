@@ -13,6 +13,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useState} from 'react';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 function LoginPage() {
   const navigation = useNavigation();
@@ -27,6 +28,14 @@ function LoginPage() {
         .then((res) => {
             console.log(res.data);
             if (res.data.status === "ok") {
+              const email = userData.email;
+              AsyncStorage.setItem('userEmail', email) // Save email instead of token
+                .then(() => {
+                  console.log('Email saved');
+                })
+                .catch((err) => {
+                  console.error('Error saving email:', err);
+                });
                 Alert.alert("Logged In Successfully!");
                 navigation.navigate("Tabs");
             } else {
