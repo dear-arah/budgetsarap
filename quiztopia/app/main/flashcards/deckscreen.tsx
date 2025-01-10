@@ -11,7 +11,7 @@ function DeckScreen({ route }: { route: any }) {
   const fetchDeck = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      const response = await axios.get(`http://localhost:3000/api/decks/${deckId}`, {
+      const response = await axios.get(`http://192.168.1.9:3000/api/decks/${deckId}`, {
         headers: { 'x-access-token': token },
       });
       setFlashcards(response.data.flashcards);
@@ -29,7 +29,7 @@ function DeckScreen({ route }: { route: any }) {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const response = await axios.post(
-        `http://localhost:3000/api/decks/add-flashcard`,
+        `http://192.168.1.9:3000/api/decks/add-flashcard`,
         { deckId, question, answer },
         { headers: { 'x-access-token': token } }
       );

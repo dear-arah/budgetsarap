@@ -20,9 +20,25 @@ require('./UserDetails');
 
 const User = mongoose.model('UserInfo');
 
-app.get('/', (req, res) => {
-    res.send({ status: 'Started' });
-});
+
+const Deck = require('./deck'); // Import Deck model
+
+// Middleware to validate user using email
+const authenticateUser = async (req, res, next) => {
+    const { email } = req.body;
+  
+    if (!email) {
+      return res.status(400).send({ status: 'error', data: 'Email is required' });
+    }
+  
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).send({ status: 'error', data: 'User not found' });
+    }
+  
+    req.user = user; // Attach user info to the request
+    next();
+};
 
 app.post('/register', async(req, res) => {   
     const {name, email, mobile, password} = req.body;
@@ -67,8 +83,39 @@ app.post("/login-user", async(req, res)=>{
 
 })
 
-const deckRoutes = require('./deckRoute');
-app.use('/api/decks', deckRoutes);
+
+// Deck Routes
+app.post('/api/decks/create-deck', authenticateUser, async (req, res) => {
+    const { title, email } = req.body;
+
+    if (!title) {
+        return res.status(400).send({ status: 'error', data: 'Deck title is required' });
+    }
+
+    try {
+        const deck = await Deck.create({ userEmail: email, title, flashcards: [] });
+        res.send({ status: 'ok', data: deck });
+    } catch (err) {
+        res.status(400).send({ status: 'error', data: err.message });
+    }
+});
+
+
+app.post('/api/decks/add-flashcard', authenticateUser, async (req, res) => {
+    const { deckId, question, answer } = req.body;
+
+    try {
+        const deck = await Deck.findById(deckId);
+        if (!deck) return res.status(404).send({ status: 'error', data: 'Deck not found' });
+
+        deck.flashcards.push({ question, answer });
+        await deck.save();
+
+        res.send({ status: 'ok', data: deck });
+    } catch (err) {
+        res.status(400).send({ status: 'error', data: err.message });
+    }
+});
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');

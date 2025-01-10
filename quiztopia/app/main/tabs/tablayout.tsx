@@ -14,39 +14,46 @@ import ProgressScreen from './progress';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 function TabLayout({ navigation }: { navigation: any }) {
-  
   const [currentTab, setCurrentTab] = useState('Home');
   const [isModalVisible, setModalVisible] = useState(false);
   const [deckTitle, setDeckTitle] = useState('');
 
-
-const addDeck = async () => {
-  if (!deckTitle) {
-    alert('Deck name is required');
-    return;
-  }
-
-  try {
-    const token = await AsyncStorage.getItem('userToken'); // Assuming you're storing tokens
-    const response = await axios.post(
-      'http://localhost:3000/api/decks/create-deck',
-      { title: deckTitle },
-      { headers: { 'x-access-token': token } }
-    );
-
-    if (response.data.status === 'ok') {
-      alert('Deck created successfully!');
-      setDeckTitle('');
-      setModalVisible(false);
-    } else {
-      alert(response.data.data);
+  
+  const addDeck = async () => {
+    if (!deckTitle.trim()) {
+        alert('Deck title cannot be empty.');
+        return;
     }
-  } catch (err) {
-    console.error(err);
-    alert('Error creating deck');
-  }
+
+    const email = await AsyncStorage.getItem('userEmail'); // Retrieve email from AsyncStorage
+    if (!email) {
+        alert('User email is not available. Please log in.');
+        return;
+    }
+
+    try {
+        const response = await axios.post('http://192.168.1.9:3000/api/decks/create-deck', {
+            email, // Send user email
+            title: deckTitle,
+        });
+
+        if (response.data.status === 'ok') {
+            alert('Deck added successfully');
+            setDeckTitle(''); // Clear input after adding
+            setModalVisible(false);
+        } else {
+            alert('Failed to add deck');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('An error occurred while adding the deck.');
+    }
 };
+
+  
+  
 
   const renderScreen = () => {
     switch (currentTab) {
