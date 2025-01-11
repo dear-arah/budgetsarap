@@ -118,22 +118,21 @@ app.post('/api/decks/add-flashcard', authenticateUser, async (req, res) => {
 });
 
 
-//binago
 app.get('/api/decks/:deckId', authenticateUser, async (req, res) => {
     const { deckId } = req.params;
-
+  
     try {
-        const deck = await Deck.findOne({ _id: deckId, userEmail: req.user.email });
-        if (!deck) {
-            return res.status(404).send({ status: 'error', data: 'Deck not found' });
-        }
-
-        res.send({ status: 'ok', data: { flashcards: deck.flashcards, title: deck.title } });
+      const deck = await Deck.findOne({ _id: deckId, userEmail: req.user.email });
+      if (!deck) {
+        return res.status(404).send({ status: 'error', data: 'Deck not found' });
+      }
+  
+      res.send({ status: 'ok', data: { flashcards: deck.flashcards, title: deck.title } });
     } catch (err) {
-        res.status(400).send({ status: 'error', data: err.message });
+      res.status(400).send({ status: 'error', data: err.message });
     }
-});
-
+  });
+  
 
 
 app.listen(3000, () => {
