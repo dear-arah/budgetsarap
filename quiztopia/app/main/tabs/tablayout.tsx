@@ -43,6 +43,10 @@ function TabLayout({ navigation }: { navigation: any }) {
             alert('Deck added successfully');
             setDeckTitle(''); // Clear input after adding
             setModalVisible(false);
+
+            // Navigate to DeckScreen with the new deck's ID
+            console.log('Navigating to DeckScreen with deckId:', response.data.data._id);
+            navigation.navigate('Deck', { deckId: response.data.data._id });
         } else {
             alert('Failed to add deck');
         }
