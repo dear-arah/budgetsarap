@@ -8,6 +8,7 @@ import SignUpPage from './auth/signup';
 import TabLayout from './main/tabs/tablayout';
 //import FolderScreen from './main/flashcards/folderscreen';
 import DeckScreen from './main/flashcards/deckscreen';
+import FlashcardPage from './main/flashcards/flashcardpage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,6 +51,7 @@ export default function RootLayout() {
       <Stack.Screen name="SignUp" component={SignUpPage} />
       <Stack.Screen name="Tabs" component={TabLayout} />
       <Stack.Screen name="Deck" component={DeckScreen} />
+      <Stack.Screen name="FlashcardPage" component={FlashcardPage} />
     </Stack.Navigator>
   );
 }
