@@ -117,26 +117,63 @@ app.post('/api/decks/add-flashcard', authenticateUser, async (req, res) => {
     }
 });
 
-
-app.get('/api/decks/:deckId', authenticateUser, async (req, res) => {
+app.get('/api/decks/:deckId', async (req, res) => {
     const { deckId } = req.params;
-  
-    try {
-      const deck = await Deck.findOne({ _id: deckId, userEmail: req.user.email });
-      if (!deck) {
-        return res.status(404).send({ status: 'error', data: 'Deck not found' });
-      }
-  
-      res.send({ status: 'ok', data: { flashcards: deck.flashcards, title: deck.title } });
-    } catch (err) {
-      res.status(400).send({ status: 'error', data: err.message });
+    const { email } = req.query;
+
+    if (!email) {
+        return res.status(400).send({ status: 'error', data: 'Email is required' });
     }
-  });
-  
+
+    try {
+        // Fix: Use `userEmail` instead of `email`
+        const deck = await Deck.findOne({ _id: deckId, userEmail: email });
+
+        if (!deck) {
+            return res.status(404).send({ status: 'error', data: 'Deck not found' });
+        }
+
+        res.status(200).send({ status: 'ok', data: deck });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ status: 'error', data: 'Failed to fetch deck' });
+    }
+});
+
+app.get('/api/decks', async (req, res) => {
+    const { email } = req.query;
+
+    if (!email) {
+        return res.status(400).send({ status: 'error', data: 'Email is required' });
+    }
+
+    try {
+        const decks = await Deck.find({ userEmail: email }).sort({ createdAt: -1 }); // Sort by createdAt descending
+        res.send({ status: 'ok', data: decks });
+    } catch (err) {
+        res.status(500).send({ status: 'error', data: err.message });
+    }
+});
+
+
+app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, res) => {
+    const { deckId } = req.params;
+
+    try {
+        const deck = await Deck.findById(deckId);
+        if (!deck) return res.status(404).send({ status: 'error', data: 'Deck not found' });
+
+        deck.isFavorite = !deck.isFavorite;
+        await deck.save();
+
+        res.send({ status: 'ok', data: deck });
+    } catch (err) {
+        res.status(400).send({ status: 'error', data: err.message });
+    }
+});
 
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
 });
-
 
