@@ -2,15 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native'; // Add this import for navigation
 
 function DeckScreen({ route }) {
   const { deckId } = route.params;
   const [flashcards, setFlashcards] = useState([]);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [deckTitle, setDeckTitle] = useState('Loading...');
+  const [deckTitle, setDeckTitle] = useState('');
   const [email, setEmail] = useState('');
+  const navigation = useNavigation(); // Get navigation object
 
+
+  const navigateToFlashcardPage = () => {
+    navigation.navigate('FlashcardPage', { deckId }); // Pass deckId to FlashcardPage
+  };
+
+  // Fetch user email from AsyncStorage
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
@@ -24,28 +32,34 @@ function DeckScreen({ route }) {
         console.error('Failed to retrieve email:', err);
       }
     };
-
+  
     fetchUserEmail();
   }, []);
 
+  // Fetch deck once email is retrieved
   useEffect(() => {
-    if (email) {
-      const fetchDeck = async () => {
-        try {
-          const response = await axios.get(`http://192.168.1.9:3000/api/decks/${deckId}`, {
-            params: { email },
-          });
-          setFlashcards(response.data.data.flashcards || []);
-          setDeckTitle(response.data.data.title || 'Untitled Deck');
-        } catch (err) {
-          console.error('Error fetching deck:', err.response?.data || err.message);
-          alert('Failed to fetch deck. Please try again.');
-        }
-      };
+    const fetchDeck = async () => {
+      if (!email) return;
+  
+      console.log('Fetching deck with ID:', deckId, 'and email:', email); // Debug log
+      try {
+        const response = await axios.get(`http://192.168.1.9:3000/api/decks/${deckId}`, {
+          params: { email },
+        });
+        console.log('Deck response:', response.data); // Log API response
+  
+        setFlashcards(response.data.data.flashcards || []);
+        setDeckTitle(response.data.data.title || 'Untitled Deck');
+      } catch (err) {
+        console.error('Error fetching deck:', err.response?.data || err.message);
+      }
 
-      fetchDeck();
-    }
-  }, [email, deckId]);
+    };
+  
+    fetchDeck();
+  }, [email]); // Fetch deck when email is updated
+  
+
 
   // Function to handle adding a flashcard
   const addFlashcard = async () => {
@@ -57,9 +71,9 @@ function DeckScreen({ route }) {
     try {
       const response = await axios.post(
         'http://192.168.1.9:3000/api/decks/add-flashcard',
-        { deckId, question, answer, email },
+        { deckId, question, answer, email }
       );
-      
+
       // Update the flashcards state with the newly added flashcard
       setFlashcards(response.data.data.flashcards);
       setQuestion('');
@@ -72,7 +86,19 @@ function DeckScreen({ route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.deckTitle}>{deckTitle}</Text>
+      <Text style={styles.deckTitle}>
+        {deckTitle ? deckTitle : 'Loading...'}
+      </Text>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.button1}>
+          <Text style={styles.buttonText1}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={navigateToFlashcardPage} style={styles.button1}>
+          <Text style={styles.buttonText1}>View Flashcards</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Question"
@@ -137,6 +163,20 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginVertical: 5,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 10,
+  },
+  button1: {
+    flex: 1,
+    backgroundColor: '#6200ea',
+    padding: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  buttonText1: { color: '#fff', fontWeight: 'bold' },
 });
 
 export default DeckScreen;
