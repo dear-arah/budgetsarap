@@ -172,8 +172,35 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
+app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
+    const { deckId, flashcardId } = req.params;
+    
+    try {
+      // Find the deck by ID and the user's email
+      const deck = await Deck.findOne({ _id: deckId, userEmail: req.body.email });
+      
+      if (!deck) {
+        return res.status(404).json({ message: 'Deck not found.' });
+      }
+  
+      // Remove the flashcard from the deck's flashcards array
+      const flashcardIndex = deck.flashcards.findIndex(card => card._id.toString() === flashcardId);
+      
+      if (flashcardIndex === -1) {
+        return res.status(404).json({ message: 'Flashcard not found.' });
+      }
+      
+      deck.flashcards.splice(flashcardIndex, 1); // Remove the flashcard from the array
+      await deck.save(); // Save the deck after modification
+  
+      res.status(200).json({ message: 'Flashcard deleted successfully.' });
+    } catch (err) {
+      console.error('Error deleting flashcard:', err);
+      res.status(500).json({ message: 'Server error.' });
+    }
+  });
+  
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
 });
-

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+
 
 function HomePage() {
   const [myDecks, setMyDecks] = useState([]);
@@ -11,12 +12,14 @@ function HomePage() {
   const [recentActivity, setRecentActivity] = useState(null); // Only one deck at a time
   const [email, setEmail] = useState('');
   const navigation = useNavigation();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [deckToDelete, setDeckToDelete] = useState(null); // To store the deck that is being deleted
 
   const fetchDecks = useCallback(async () => {
     if (!email) return;
 
     try {
-      const response = await axios.get('http://192.168.1.9:3000/api/decks', { params: { email } });
+      const response = await axios.get('http://192.168.1.6:3000/api/decks', { params: { email } });
       const decks = response.data.data;
       setMyDecks(decks);
       setFavorites(decks.filter((deck) => deck.isFavorite));
@@ -39,7 +42,7 @@ function HomePage() {
 
   const toggleFavorite = async (deckId) => {
     try {
-      const response = await axios.patch(`http://192.168.1.9:3000/api/decks/${deckId}/toggle-favorite`, { email });
+      const response = await axios.patch(`http://192.168.1.6:3000/api/decks/${deckId}/toggle-favorite`, { email });
       const updatedDeck = response.data.data;
 
       setMyDecks((prev) =>
@@ -66,6 +69,24 @@ function HomePage() {
     navigation.navigate('FlashcardPage', { deckId });
   };
 
+  const handleDeleteClick = (deck) => {
+    // Set the deck to be deleted
+    setDeckToDelete(deck);
+    setModalVisible(true); // Show the modal
+  };
+
+  const deleteDeck = async () => {
+    try {
+        await axios.delete(`http://192.168.1.6:3000/api/decks/${deckToDelete._id}`);
+        Alert.alert('Success', 'Deck deleted successfully');
+        fetchDecks(); // Refresh the decks after deletion
+    } catch (err) {
+        console.error('Error deleting deck:', err.response?.data || err.message);
+        Alert.alert('Error', 'Failed to delete deck. Please try again.');
+    }
+    setModalVisible(false);
+};
+    
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Favorites ({favorites.length})</Text>
@@ -108,7 +129,7 @@ function HomePage() {
           <TouchableOpacity
             style={styles.cardRow}
             onPress={() => navigateToDeck(recentActivity._id)}
-            activeOpacity={0.9} // Adjust opacity for press effect
+            activeOpacity={0.9}
             android_ripple={{ color: '#cccccc', borderless: false }}
           >
             <View style={styles.card}>
@@ -122,9 +143,7 @@ function HomePage() {
                 </TouchableOpacity>
                 <View style={styles.cardTitleContainer}>
                   <Text style={styles.cardTitle}>{recentActivity.title}</Text>
-                  <Text style={styles.cardSubtitle}>
-                    {recentActivity.flashcards.length} cards
-                  </Text>
+                  <Text style={styles.cardSubtitle}>{recentActivity.flashcards.length} cards</Text>
                 </View>
                 <Ionicons name="ellipsis-horizontal" size={24} color="grey" />
               </View>
@@ -156,12 +175,39 @@ function HomePage() {
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardSubtitle}>{item.flashcards.length} cards</Text>
                 </View>
-                <Ionicons name="ellipsis-horizontal" size={24} color="grey" />
+                <TouchableOpacity onPress={() => handleDeleteClick(item)}>
+                  <Ionicons name="trash-bin" size={30} color="grey" />
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           </View>
         )}
       />
+
+      {/* Modal for Deletion Confirmation */}
+      <Modal visible={modalVisible} transparent={true}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>
+              Are you sure you want to delete this deck?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={deleteDeck}
+                style={styles.confirmButton}
+              >
+                <Text style={styles.buttonText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -213,5 +259,39 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: 14,
     color: '#666',
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  confirmButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+  },
+  cancelButton: {
+    backgroundColor: 'gray',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
