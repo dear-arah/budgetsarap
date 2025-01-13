@@ -172,6 +172,41 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
+// Route to update a flashcard
+app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
+    const { deckId, flashcardId } = req.params;
+    const { question, answer } = req.body; // Extract the updated question and answer
+
+    try {
+        // Find the deck by its ID
+        const deck = await Deck.findOne({ _id: deckId, userEmail: req.body.email });
+
+        if (!deck) {
+            return res.status(404).send({ status: 'error', data: 'Deck not found' });
+        }
+
+        // Find the flashcard by its ID within the deck's flashcards array
+        const flashcard = deck.flashcards.id(flashcardId);
+
+        if (!flashcard) {
+            return res.status(404).send({ status: 'error', data: 'Flashcard not found' });
+        }
+
+        // Update the flashcard's question and answer
+        flashcard.question = question;
+        flashcard.answer = answer;
+
+        // Save the deck after updating the flashcard
+        await deck.save();
+
+        res.send({ status: 'ok', data: deck }); // Send back the updated deck with the updated flashcard
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ status: 'error', data: 'Server error' });
+    }
+});
+
+
 app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
     

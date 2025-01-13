@@ -13,7 +13,10 @@ function DeckScreen({ route }) {
   const [deckTitle, setDeckTitle] = useState('');
   const [email, setEmail] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedFlashcardId, setSelectedFlashcardId] = useState(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editFlashcard, setEditFlashcard] = useState(null);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
   const navigation = useNavigation(); // Get navigation object
 
   const navigateToFlashcardPage = () => {
@@ -34,7 +37,7 @@ function DeckScreen({ route }) {
         console.error('Failed to retrieve email:', err);
       }
     };
-  
+
     fetchUserEmail();
   }, []);
 
@@ -42,21 +45,21 @@ function DeckScreen({ route }) {
   useEffect(() => {
     const fetchDeck = async () => {
       if (!email) return;
-  
+
       console.log('Fetching deck with ID:', deckId, 'and email:', email); // Debug log
       try {
         const response = await axios.get(`http://192.168.1.6:3000/api/decks/${deckId}`, {
           params: { email },
         });
         console.log('Deck response:', response.data); // Log API response
-  
+
         setFlashcards(response.data.data.flashcards || []);
         setDeckTitle(response.data.data.title || 'Untitled Deck');
       } catch (err) {
         console.error('Error fetching deck:', err.response?.data || err.message);
       }
     };
-  
+
     fetchDeck();
   }, [email]); // Fetch deck when email is updated
 
@@ -84,21 +87,15 @@ function DeckScreen({ route }) {
   };
 
   const deleteFlashcard = async () => {
-    if (!selectedFlashcardId) return;
+    if (!editFlashcard?._id) return;
 
     try {
-      const storedEmail = await AsyncStorage.getItem('userEmail');
-      if (!storedEmail) {
-        alert('User email not found. Please log in again.');
-        return;
-      }
-
-      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${selectedFlashcardId}`, {
-        data: { email: storedEmail },
+      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`, {
+        data: { email }
       });
 
       Alert.alert('Flashcard deleted successfully');
-      setFlashcards(flashcards.filter((card) => card._id !== selectedFlashcardId));
+      setFlashcards(flashcards.filter((card) => card._id !== editFlashcard._id));
       setModalVisible(false); // Close the modal after deletion
     } catch (err) {
       console.error('Error deleting flashcard:', err.response?.data || err.message);
@@ -107,15 +104,40 @@ function DeckScreen({ route }) {
   };
 
   const openDeleteModal = (flashcardId) => {
-    setSelectedFlashcardId(flashcardId);
+    const flashcard = flashcards.find((card) => card._id === flashcardId);
+    setEditFlashcard(flashcard);
     setModalVisible(true);
   };
 
   // Function to handle editing a flashcard
-  const editFlashcard = (flashcardId) => {
-    // You can navigate to an EditFlashcardPage if needed
-    console.log('Edit flashcard with ID:', flashcardId);
-    // Here you can implement navigation to an edit screen if needed
+  const openEditModal = (flashcard) => {
+    setEditFlashcard(flashcard);
+    setNewQuestion(flashcard.question);
+    setNewAnswer(flashcard.answer);
+    setEditModalVisible(true);
+  };
+
+  const saveEdit = async () => {
+    try {
+      const response = await axios.put(
+        `http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`,
+        { question: newQuestion, answer: newAnswer, email }
+      );
+
+      // Update the flashcard in local state
+      setFlashcards(flashcards.map((card) =>
+        card._id === editFlashcard._id
+          ? { ...card, question: newQuestion, answer: newAnswer }
+          : card
+      ));
+
+      // Close the modal
+      setEditModalVisible(false);
+      Alert.alert('Flashcard updated successfully');
+    } catch (err) {
+      console.error('Error updating flashcard:', err.response?.data || err.message);
+      alert('Failed to update flashcard. Please try again.');
+    }
   };
 
   return (
@@ -161,7 +183,7 @@ function DeckScreen({ route }) {
 
             <View style={styles.cardRow}>
               {/* Pencil Icon for Editing */}
-              <TouchableOpacity onPress={() => editFlashcard(item._id)}>
+              <TouchableOpacity onPress={() => openEditModal(item)}>
                 <Icon name="pencil" size={20} color="#6200ea" style={styles.icon} />
               </TouchableOpacity>
 
@@ -174,6 +196,40 @@ function DeckScreen({ route }) {
         )}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
+
+      {/* Edit Flashcard Modal */}
+      <Modal visible={editModalVisible} transparent={true}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>Edit Flashcard</Text>
+
+            <TextInput
+              value={newQuestion}
+              onChangeText={setNewQuestion}
+              placeholder="Edit Question"
+              style={styles.textInput}
+            />
+            <TextInput
+              value={newAnswer}
+              onChangeText={setNewAnswer}
+              placeholder="Edit Answer"
+              style={styles.textInput}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={saveEdit} style={styles.confirmButton}>
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setEditModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal for Deletion Confirmation */}
       <Modal visible={modalVisible} transparent={true}>
@@ -235,19 +291,22 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 10,
   },
   button1: {
-    flex: 1,
     backgroundColor: '#6200ea',
     padding: 10,
-    marginHorizontal: 5,
-    alignItems: 'center',
     borderRadius: 5,
+    marginTop: 10,
+    width: '45%',
+    alignItems: 'center',
   },
-  buttonText1: { color: '#fff', fontWeight: 'bold' },
-  cardRow: { flexDirection: 'row', justifyContent: 'flex-end' },
-  icon: { marginHorizontal: 10 },
+  buttonText1: { color: '#fff' },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  icon: { padding: 5 },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
@@ -255,23 +314,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
-    width: 300,
-    alignItems: 'center',
+    width: '80%',
+    maxWidth: 400,
   },
-  modalText: { fontSize: 16, marginBottom: 20 },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
   confirmButton: {
-    backgroundColor: '#e60000',
+    backgroundColor: '#6200ea',
     padding: 10,
     borderRadius: 5,
+    width: '45%',
+    alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: '#ccc',
     padding: 10,
     borderRadius: 5,
+    width: '45%',
+    alignItems: 'center',
   },
 });
 
