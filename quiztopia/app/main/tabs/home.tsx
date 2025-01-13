@@ -16,7 +16,7 @@ function HomePage() {
     if (!email) return;
 
     try {
-      const response = await axios.get('http://192.168.1.9:3000/api/decks', { params: { email } });
+      const response = await axios.get('http://192.168.1.6:3000/api/decks', { params: { email } });
       const decks = response.data.data;
       setMyDecks(decks);
       setFavorites(decks.filter((deck) => deck.isFavorite));

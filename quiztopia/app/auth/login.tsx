@@ -24,7 +24,7 @@ function LoginPage() {
     const userData = { email, password };
 
     axios
-        .post("http://192.168.1.9:3000/login-user", userData)
+        .post("http://192.168.1.6:3000/login-user", userData)
         .then((res) => {
             console.log(res.data);
             if (res.data.status === "ok") {

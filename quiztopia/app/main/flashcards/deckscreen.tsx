@@ -43,7 +43,7 @@ function DeckScreen({ route }) {
   
       console.log('Fetching deck with ID:', deckId, 'and email:', email); // Debug log
       try {
-        const response = await axios.get(`http://192.168.1.9:3000/api/decks/${deckId}`, {
+        const response = await axios.get(`http://192.168.1.6:3000/api/decks/${deckId}`, {
           params: { email },
         });
         console.log('Deck response:', response.data); // Log API response
@@ -70,7 +70,7 @@ function DeckScreen({ route }) {
 
     try {
       const response = await axios.post(
-        'http://192.168.1.9:3000/api/decks/add-flashcard',
+        'http://192.168.1.6:3000/api/decks/add-flashcard',
         { deckId, question, answer, email }
       );
 
@@ -83,6 +83,21 @@ function DeckScreen({ route }) {
       alert('Failed to add flashcard. Please try again.');
     }
   };
+
+  const updateFlashcard = async (flashcardId, updatedQuestion, updatedAnswer) => {
+    try {
+        const storedEmail = await AsyncStorage.getItem('userEmail');
+        const response = await axios.put(
+            `http://192.168.1.6:3000/decks/${deckId}/flashcards/${flashcardId}`,
+            { question: updatedQuestion, answer: updatedAnswer },
+            { headers: { Authorization: `Bearer ${storedEmail}` } } // If using JWT
+        );
+        console.log('Flashcard updated:', response.data.flashcard);
+    } catch (error) {
+        console.error('Error updating flashcard:', error.response?.data || error.message);
+    }
+};
+
 
   return (
     <View style={styles.container}>
@@ -179,4 +194,4 @@ const styles = StyleSheet.create({
   buttonText1: { color: '#fff', fontWeight: 'bold' },
 });
 
-export default DeckScreen;
+export default DeckScreen;  

@@ -34,7 +34,7 @@ function TabLayout({ navigation }: { navigation: any }) {
     }
 
     try {
-        const response = await axios.post('http://192.168.1.9:3000/api/decks/create-deck', {
+        const response = await axios.post('http://192.168.1.6:3000/api/decks/create-deck', {
             email, // Send user email
             title: deckTitle,
         });

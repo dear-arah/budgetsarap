@@ -32,7 +32,7 @@ function FlashcardPage({ route }) {
         }
 
         const response = await axios.get(
-          `http://192.168.1.9:3000/api/decks/${deckId}`,
+          `http://192.168.1.6:3000/api/decks/${deckId}`,
           { params: { email: storedEmail } } // Pass email in query parameters
         );
 
@@ -60,17 +60,28 @@ function FlashcardPage({ route }) {
     setCurrentIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
   };
 
-  const deleteDeck = async () => {
+
+  const deleteFlashcard = async (flashcardId) => {
     try {
-      await axios.delete(`http://192.168.1.9:3000/api/decks/${deckId}`);
-      Alert.alert('Deck deleted successfully');
-      navigation.goBack(); // Navigate back after deletion
+      const storedEmail = await AsyncStorage.getItem('userEmail');
+      if (!storedEmail) {
+        alert('User email not found. Please log in again.');
+        return;
+      }
+  
+      // Send DELETE request with email in the body
+      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${flashcardId}`, {
+        data: { email: storedEmail }, // Pass email in the request body
+      });
+  
+      Alert.alert('Flashcard deleted successfully');
+      setFlashcards(flashcards.filter((card) => card._id !== flashcardId)); // Remove the deleted flashcard from the state
     } catch (err) {
-      console.error('Error deleting deck:', err.response?.data || err.message);
-      alert('Failed to delete deck. Please try again.');
+      console.error('Error deleting flashcard:', err.response?.data || err.message);
+      alert('Failed to delete flashcard. Please try again.');
     }
-    setModalVisible(false);
   };
+  
 
   if (!flashcards.length) {
     return (
@@ -88,19 +99,25 @@ function FlashcardPage({ route }) {
     <Text style={styles.deckTitle}>{deckTitle}</Text>
 
     {/* Buttons Row */}
+
+    {/*Back button*/}
     <View style={styles.topButtons}>
     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.button1}>
         <Text style={styles.buttonText1}>Back</Text>
     </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => navigation.navigate('Deck', { deckId })}
-      >
-        <Text style={styles.buttonText}>Edit Flashcards</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+
+    {/*Edit button*/}
+    <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('DeckScreen', { deckId })}
+        >
+          <Text style={styles.buttonText}>Edit Flashcards</Text>
+        </TouchableOpacity>
+
+    {/*Delete button*/}
+    <TouchableOpacity
+        onPress={() => deleteFlashcard(currentFlashcard._id)} // Pass the flashcard ID to delete
         style={styles.deleteButton}
-        onPress={() => setModalVisible(true)}
       >
         <Text style={styles.buttonText}>Delete</Text>
       </TouchableOpacity>
@@ -128,16 +145,16 @@ function FlashcardPage({ route }) {
       </TouchableOpacity>
     </View>
 
-    {/* Modal for Deletion Confirmation */}
-    <Modal visible={modalVisible} transparent={true}>
+     {/* Modal for Deletion Confirmation */}
+     <Modal visible={modalVisible} transparent={true}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalText}>
-            Are you sure you want to delete this deck?
+            Are you sure you want to delete this flashcard?
           </Text>
           <View style={styles.modalButtons}>
             <TouchableOpacity
-              onPress={deleteDeck}
+              onPress={deleteFlashcard}
               style={styles.confirmButton}
             >
               <Text style={styles.buttonText}>Delete</Text>
