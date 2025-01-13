@@ -172,59 +172,34 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
-
-app.put('/decks/:deckId/flashcards/:flashcardId', async (req, res) => {
-    const { deckId, flashcardId } = req.params;
-    const { question, answer } = req.body;
-
-    try {
-        const deck = await Deck.findById(deckId);
-        if (!deck) {
-            return res.status(404).send('Deck not found');
-        }
-
-        const flashcard = deck.flashcards.id(flashcardId);
-        if (!flashcard) {
-            return res.status(404).send('Flashcard not found');
-        }
-
-        flashcard.question = question;
-        flashcard.answer = answer;
-        await deck.save();
-
-        res.send({ message: 'Flashcard updated successfully', flashcard });
-    } catch (error) {
-        console.error('Error updating flashcard:', error);
-        res.status(500).send('Internal server error');
-    }
-});
-
 app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
-
+    
     try {
-        // Find the deck by ID
-        const deck = await Deck.findById(deckId);
-        if (!deck) {
-            return res.status(404).send({ status: 'error', data: 'Deck not found' });
-        }
-
-        // Remove the flashcard from the deck's flashcards array
-        const flashcardIndex = deck.flashcards.findIndex(card => card._id.toString() === flashcardId);
-        if (flashcardIndex === -1) {
-            return res.status(404).send({ status: 'error', data: 'Flashcard not found' });
-        }
-
-        // Remove the flashcard from the array
-        deck.flashcards.splice(flashcardIndex, 1);
-        await deck.save();
-
-        res.status(200).send({ status: 'ok', data: 'Flashcard deleted successfully' });
+      // Find the deck by ID and the user's email
+      const deck = await Deck.findOne({ _id: deckId, userEmail: req.body.email });
+      
+      if (!deck) {
+        return res.status(404).json({ message: 'Deck not found.' });
+      }
+  
+      // Remove the flashcard from the deck's flashcards array
+      const flashcardIndex = deck.flashcards.findIndex(card => card._id.toString() === flashcardId);
+      
+      if (flashcardIndex === -1) {
+        return res.status(404).json({ message: 'Flashcard not found.' });
+      }
+      
+      deck.flashcards.splice(flashcardIndex, 1); // Remove the flashcard from the array
+      await deck.save(); // Save the deck after modification
+  
+      res.status(200).json({ message: 'Flashcard deleted successfully.' });
     } catch (err) {
-        res.status(500).send({ status: 'error', data: err.message });
+      console.error('Error deleting flashcard:', err);
+      res.status(500).json({ message: 'Server error.' });
     }
-});
-
+  });
+  
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');

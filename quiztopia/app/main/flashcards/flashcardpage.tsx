@@ -61,28 +61,6 @@ function FlashcardPage({ route }) {
   };
 
 
-  const deleteFlashcard = async (flashcardId) => {
-    try {
-      const storedEmail = await AsyncStorage.getItem('userEmail');
-      if (!storedEmail) {
-        alert('User email not found. Please log in again.');
-        return;
-      }
-  
-      // Send DELETE request with email in the body
-      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${flashcardId}`, {
-        data: { email: storedEmail }, // Pass email in the request body
-      });
-  
-      Alert.alert('Flashcard deleted successfully');
-      setFlashcards(flashcards.filter((card) => card._id !== flashcardId)); // Remove the deleted flashcard from the state
-    } catch (err) {
-      console.error('Error deleting flashcard:', err.response?.data || err.message);
-      alert('Failed to delete flashcard. Please try again.');
-    }
-  };
-  
-
   if (!flashcards.length) {
     return (
       <View style={styles.container}>
@@ -99,29 +77,26 @@ function FlashcardPage({ route }) {
     <Text style={styles.deckTitle}>{deckTitle}</Text>
 
     {/* Buttons Row */}
-
-    {/*Back button*/}
     <View style={styles.topButtons}>
-    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.button1}>
-        <Text style={styles.buttonText1}>Back</Text>
-    </TouchableOpacity>
+  {/* Back Button */}
+  <TouchableOpacity onPress={() => navigation.goBack()} style={styles.button1}>
+    <Text style={styles.buttonText1}>Back</Text>
+  </TouchableOpacity>
 
-    {/*Edit button*/}
-    <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate('DeckScreen', { deckId })}
-        >
-          <Text style={styles.buttonText}>Edit Flashcards</Text>
-        </TouchableOpacity>
+  {/* Home Button */}
+  <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.homeButton}>
+    <Text style={styles.buttonText}>Home</Text>
+  </TouchableOpacity>
 
-    {/*Delete button*/}
-    <TouchableOpacity
-        onPress={() => deleteFlashcard(currentFlashcard._id)} // Pass the flashcard ID to delete
-        style={styles.deleteButton}
-      >
-        <Text style={styles.buttonText}>Delete</Text>
-      </TouchableOpacity>
-    </View>
+  {/* Edit Flashcards Button */}
+  <TouchableOpacity
+    style={styles.editButton}
+    onPress={() => navigation.navigate('Deck', { deckId })}
+  >
+    <Text style={styles.buttonText}>Edit Flashcards</Text>
+  </TouchableOpacity>
+</View>
+
 
     {/* Card Count */}
     <Text style={styles.cardCount}>
@@ -144,31 +119,6 @@ function FlashcardPage({ route }) {
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
-
-     {/* Modal for Deletion Confirmation */}
-     <Modal visible={modalVisible} transparent={true}>
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalText}>
-            Are you sure you want to delete this flashcard?
-          </Text>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              onPress={deleteFlashcard}
-              style={styles.confirmButton}
-            >
-              <Text style={styles.buttonText}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   </View>
   );
 }
@@ -178,7 +128,6 @@ const styles = StyleSheet.create({
     deckTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
     topButtons: { flexDirection: 'row', marginBottom: 20 },
     editButton: { backgroundColor: '#6200ea', padding: 10, marginRight: 10 },
-    deleteButton: { backgroundColor: '#b71c1c', padding: 10 },
     buttonText: { color: '#fff', fontWeight: 'bold' },
     buttonText1: { backgroundColor: '#6200ea', padding: 10, marginRight: 10, color: '#fff', fontWeight: 'bold' },
     cardCount: { fontSize: 18, marginBottom: 10 },
@@ -224,6 +173,16 @@ const styles = StyleSheet.create({
     modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
     confirmButton: { backgroundColor: '#b71c1c', padding: 10, marginRight: 10 },
     cancelButton: { backgroundColor: '#6200ea', padding: 10 },
+
+    homeButton: {
+      backgroundColor: '#03a9f4', // Light blue color
+      padding: 12,
+      borderRadius: 50, // Makes the button circular
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    
+    
 });
 
 export default FlashcardPage;
