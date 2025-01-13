@@ -69,23 +69,44 @@ function HomePage() {
     navigation.navigate('FlashcardPage', { deckId });
   };
 
-  const handleDeleteClick = (deck) => {
-    // Set the deck to be deleted
-    setDeckToDelete(deck);
-    setModalVisible(true); // Show the modal
-  };
-
   const deleteDeck = async () => {
-    try {
-        await axios.delete(`http://192.168.1.6:3000/api/decks/${deckToDelete._id}`);
-        Alert.alert('Success', 'Deck deleted successfully');
-        fetchDecks(); // Refresh the decks after deletion
-    } catch (err) {
-        console.error('Error deleting deck:', err.response?.data || err.message);
-        Alert.alert('Error', 'Failed to delete deck. Please try again.');
+    if (!email) {
+      Alert.alert('Error', 'Email is required for deleting decks.');
+      return;
     }
+  
+    try {
+      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckToDelete._id}`, {
+        data: { email } // Send the email in the request body
+      });
+  
+      Alert.alert('Success', 'Deck deleted successfully');
+  
+      // Remove the deleted deck from both 'myDecks' and 'favorites' arrays
+      setMyDecks((prevDecks) => prevDecks.filter(deck => deck._id !== deckToDelete._id));
+      setFavorites((prevFavorites) => prevFavorites.filter(deck => deck._id !== deckToDelete._id));
+  
+      // Update recent activity if the deleted deck was part of it
+      if (recentActivity && recentActivity._id === deckToDelete._id) {
+        setRecentActivity(null);
+      }
+  
+      fetchDecks(); // Refresh the decks after deletion, this may be redundant now
+  
+    } catch (err) {
+      console.error('Error deleting deck:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to delete deck. Please try again.');
+    }
+  
     setModalVisible(false);
-};
+  };
+  
+  
+  const handleDeleteClick = (deck) => {
+    setDeckToDelete(deck); // Set the deck to be deleted
+    setModalVisible(true);  // Show the modal
+  };
+  
     
   return (
     <View style={styles.container}>
@@ -108,13 +129,18 @@ function HomePage() {
                       color={item.isFavorite ? 'gold' : 'grey'}
                       onPress={() => toggleFavorite(item._id)}
                     />
+                  
+
                     <View style={styles.cardTitleContainer}>
                       <Text style={styles.cardTitle}>{item.title}</Text>
                       <Text style={styles.cardSubtitle}>{item.flashcards.length} cards</Text>
                     </View>
-                    <Ionicons name="ellipsis-horizontal" size={24} color="grey" />
+                    <TouchableOpacity onPress={() => handleDeleteClick(recentActivity)}>
+  <Ionicons name="trash-bin" size={30} color="grey" />
+</TouchableOpacity>
                   </View>
                 </TouchableOpacity>
+                
               </View>
             )}
           />
@@ -145,7 +171,9 @@ function HomePage() {
                   <Text style={styles.cardTitle}>{recentActivity.title}</Text>
                   <Text style={styles.cardSubtitle}>{recentActivity.flashcards.length} cards</Text>
                 </View>
-                <Ionicons name="ellipsis-horizontal" size={24} color="grey" />
+                <TouchableOpacity onPress={() => handleDeleteClick(recentActivity)}>
+  <Ionicons name="trash-bin" size={30} color="grey" />
+</TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>

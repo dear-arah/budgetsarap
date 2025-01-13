@@ -14,7 +14,9 @@ function DeckScreen({ route }) {
   const [email, setEmail] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [newDeckTitle, setNewDeckTitle] = useState('');
   const [editFlashcard, setEditFlashcard] = useState(null);
+  const [editDeckModalVisible, setEditDeckModalVisible] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
   const navigation = useNavigation(); // Get navigation object
@@ -140,11 +142,57 @@ function DeckScreen({ route }) {
     }
   };
 
+  // Function to handle editing the deck title
+  const updateDeckTitle = async (deckId, newTitle, email) => {
+    if (!email) {
+      alert('User email is required for updating the deck title.');
+      return;
+    }
+  
+    if (!newTitle) {
+      alert('Please enter a valid title.');
+      return;
+    }
+  
+    try {
+      const response = await axios.put(
+        `http://192.168.1.6:3000/api/decks/${deckId}/title`, 
+        { title: newTitle },
+        { params: { email } }
+      );
+  
+      if (response.data.status === 'ok') {
+        setDeckTitle(newTitle); // Update the title in state
+        Alert.alert('Deck title updated successfully');
+        setEditDeckModalVisible(false); // Close the modal
+      } else {
+        throw new Error('Failed to update deck title');
+      }
+    } catch (err) {
+      console.error('Error updating deck title:', err.response?.data || err.message);
+      alert('Failed to update deck title. Please try again.');
+    }
+  };
+  
+  const closeEditDeckModal = () => {
+    setNewDeckTitle('');
+    setEditDeckModalVisible(false);
+  };  
+  
+
   return (
     <View style={styles.container}>
       <Text style={styles.deckTitle}>
-        {deckTitle ? deckTitle : 'Loading...'}
-      </Text>
+  {deckTitle ? deckTitle : 'Loading...'}
+  <TouchableOpacity onPress={() => { 
+    setNewDeckTitle(deckTitle); 
+    setEditDeckModalVisible(true); 
+  }}>
+    <Icon name="pencil" size={20} color="#6200ea" style={styles.icon} />
+  </TouchableOpacity>
+</Text>
+
+
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.button1}>
@@ -230,6 +278,38 @@ function DeckScreen({ route }) {
           </View>
         </View>
       </Modal>
+
+ {/* Modal for Editing of card title */}
+<Modal visible={editDeckModalVisible} transparent={true}>
+  <View style={styles.modalBackground}>
+    <View style={styles.modalContainer}>
+      <Text style={styles.modalText}>Edit Deck Title</Text>
+      <TextInput
+        value={newDeckTitle}
+        onChangeText={setNewDeckTitle}
+        placeholder="Enter new deck title"
+        style={styles.textInput}
+      />
+      <View style={styles.modalButtons}>
+        <TouchableOpacity 
+          onPress={() => updateDeckTitle(deckId, newDeckTitle, email)} 
+          style={[styles.confirmButton, { opacity: newDeckTitle ? 1 : 0.5 }]} 
+          disabled={!newDeckTitle}  // Disable if newDeckTitle is empty
+        >
+          <Text style={styles.buttonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setEditDeckModalVisible(false)} 
+          style={styles.cancelButton}
+        >
+          <Text style={styles.buttonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+
 
       {/* Modal for Deletion Confirmation */}
       <Modal visible={modalVisible} transparent={true}>
@@ -341,5 +421,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
 
 export default DeckScreen;
