@@ -83,11 +83,7 @@ function FlashcardPage({ route }) {
     <Text style={styles.buttonText1}>Back</Text>
   </TouchableOpacity>
 
-  {/* Home Button */}
-  <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.homeButton}>
-    <Text style={styles.buttonText}>Home</Text>
-  </TouchableOpacity>
-
+ 
   {/* Edit Flashcards Button */}
   <TouchableOpacity
     style={styles.editButton}
@@ -174,13 +170,6 @@ const styles = StyleSheet.create({
     confirmButton: { backgroundColor: '#b71c1c', padding: 10, marginRight: 10 },
     cancelButton: { backgroundColor: '#6200ea', padding: 10 },
 
-    homeButton: {
-      backgroundColor: '#03a9f4', // Light blue color
-      padding: 12,
-      borderRadius: 50, // Makes the button circular
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     
     
 });

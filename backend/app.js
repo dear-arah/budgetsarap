@@ -172,6 +172,74 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
+// Route to update a flashcard
+app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
+    const { deckId, flashcardId } = req.params;
+    const { question, answer } = req.body; // Extract the updated question and answer
+
+    try {
+        // Find the deck by its ID
+        const deck = await Deck.findOne({ _id: deckId, userEmail: req.body.email });
+
+        if (!deck) {
+            return res.status(404).send({ status: 'error', data: 'Deck not found' });
+        }
+
+        // Find the flashcard by its ID within the deck's flashcards array
+        const flashcard = deck.flashcards.id(flashcardId);
+
+        if (!flashcard) {
+            return res.status(404).send({ status: 'error', data: 'Flashcard not found' });
+        }
+
+        // Update the flashcard's question and answer
+        flashcard.question = question;
+        flashcard.answer = answer;
+
+        // Save the deck after updating the flashcard
+        await deck.save();
+
+        res.send({ status: 'ok', data: deck }); // Send back the updated deck with the updated flashcard
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ status: 'error', data: 'Server error' });
+    }
+});
+
+// Route to update the deck title
+// Route to update the deck title
+app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
+    const { deckId } = req.params;
+    const { title } = req.body; // The updated title
+
+    if (!title) {
+        return res.status(400).send({ status: 'error', data: 'Title is required' });
+    }
+
+    try {
+        // Use the email from the authenticated user (from req.user.email)
+        const userEmail = req.user.email;
+
+        // Find the deck by ID and ensure it belongs to the authenticated user
+        const deck = await Deck.findOne({ _id: deckId, userEmail: userEmail });
+
+        if (!deck) {
+            return res.status(404).send({ status: 'error', data: 'Deck not found' });
+        }
+
+        // Update the title of the deck
+        deck.title = title;
+
+        // Save the updated deck
+        await deck.save();
+
+        res.send({ status: 'ok', data: deck });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ status: 'error', data: 'Server error' });
+    }
+});
+
 app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
     
@@ -199,6 +267,28 @@ app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async
       res.status(500).json({ message: 'Server error.' });
     }
   });
+
+  // Route to delete a deck
+app.delete('/api/decks/:deckId', authenticateUser, async (req, res) => {
+    const { deckId } = req.params;
+
+    try {
+        // Find the deck by ID and the user's email
+        const deck = await Deck.findOne({ _id: deckId, userEmail: req.body.email });
+
+        if (!deck) {
+            return res.status(404).json({ message: 'Deck not found.' });
+        }
+
+        // Delete the deck
+        await Deck.deleteOne({ _id: deckId });
+
+        res.status(200).json({ message: 'Deck deleted successfully.' });
+    } catch (err) {
+        console.error('Error deleting deck:', err);
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
   
 
 app.listen(3000, () => {
