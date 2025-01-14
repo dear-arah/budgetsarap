@@ -9,6 +9,10 @@ import TabLayout from './main/tabs/tablayout';
 //import FolderScreen from './main/flashcards/folderscreen';
 import DeckScreen from './main/flashcards/deckscreen';
 import FlashcardPage from './main/flashcards/flashcardpage';
+import QuizPage from './main/flashcards/quizpage';
+import QuizYourself from './main/flashcards/quizyourself';
+import IdentificationQuiz from './main/flashcards/identificationquiz';
+import MultipleChoiceQuiz from './main/flashcards/multiplechoice';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,6 +56,12 @@ export default function RootLayout() {
       <Stack.Screen name="Tabs" component={TabLayout} />
       <Stack.Screen name="Deck" component={DeckScreen} />
       <Stack.Screen name="FlashcardPage" component={FlashcardPage} />
+      <Stack.Screen name="QuizPage" component={QuizPage} />
+      <Stack.Screen name="QuizYourself" component={QuizYourself} />
+      <Stack.Screen name="IdentificationQuiz" component={IdentificationQuiz} />
+      <Stack.Screen name="MultipleChoiceQuiz" component={MultipleChoiceQuiz} />
+
+
     </Stack.Navigator>
   );
 }
