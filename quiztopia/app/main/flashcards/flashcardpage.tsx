@@ -32,7 +32,7 @@ function FlashcardPage({ route }) {
         }
 
         const response = await axios.get(
-          `http://192.168.1.6:3000/api/decks/${deckId}`,
+          `http://192.168.1.9:3000/api/decks/${deckId}`,
           { params: { email: storedEmail } } // Pass email in query parameters
         );
 
@@ -73,6 +73,15 @@ function FlashcardPage({ route }) {
 
   return (
     <View style={styles.container}>
+    
+    {/* Quiz Types*/}
+    <TouchableOpacity
+      style={styles.quizButton}
+      onPress={() => navigation.navigate('QuizPage', { flashcards })}
+    >
+      <Text style={styles.buttonText}>Quiztopia Mode</Text>
+    </TouchableOpacity>
+
     {/* Deck Title */}
     <Text style={styles.deckTitle}>{deckTitle}</Text>
 
@@ -169,8 +178,12 @@ const styles = StyleSheet.create({
     modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
     confirmButton: { backgroundColor: '#b71c1c', padding: 10, marginRight: 10 },
     cancelButton: { backgroundColor: '#6200ea', padding: 10 },
-
-    
+    quizButton: {
+      backgroundColor: '#ffa500',
+      padding: 10,
+      borderRadius: 5,
+      marginBottom: 10,
+    },  
     
 });
 
