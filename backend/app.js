@@ -206,8 +206,6 @@ app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (r
     }
 });
 
-// Route to update the deck title
-// Route to update the deck title
 app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
     const { deckId } = req.params;
     const { title } = req.body; // The updated title
@@ -227,7 +225,7 @@ app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
             return res.status(404).send({ status: 'error', data: 'Deck not found' });
         }
 
-        // Update the title of the deck
+        // Update the deck's title
         deck.title = title;
 
         // Save the updated deck
@@ -239,6 +237,7 @@ app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
         res.status(500).send({ status: 'error', data: 'Server error' });
     }
 });
+
 
 app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
