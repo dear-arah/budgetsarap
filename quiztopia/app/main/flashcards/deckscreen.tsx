@@ -50,7 +50,7 @@ function DeckScreen({ route }) {
 
       console.log('Fetching deck with ID:', deckId, 'and email:', email); // Debug log
       try {
-        const response = await axios.get(`http://192.168.1.9:3000/api/decks/${deckId}`, {
+        const response = await axios.get(`http://192.168.1.6:3000/api/decks/${deckId}`, {
           params: { email },
         });
         console.log('Deck response:', response.data); // Log API response
@@ -74,7 +74,7 @@ function DeckScreen({ route }) {
 
     try {
       const response = await axios.post(
-        'http://192.168.1.9:3000/api/decks/add-flashcard',
+        'http://192.168.1.6:3000/api/decks/add-flashcard',
         { deckId, question, answer, email }
       );
 
@@ -92,7 +92,7 @@ function DeckScreen({ route }) {
     if (!editFlashcard?._id) return;
 
     try {
-      await axios.delete(`http://192.168.1.9:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`, {
+      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`, {
         data: { email }
       });
 
@@ -122,7 +122,7 @@ function DeckScreen({ route }) {
   const saveEdit = async () => {
     try {
       const response = await axios.put(
-        `http://192.168.1.9:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`,
+        `http://192.168.1.6:3000/api/decks/${deckId}/flashcards/${editFlashcard._id}`,
         { question: newQuestion, answer: newAnswer, email }
       );
 
@@ -156,7 +156,7 @@ function DeckScreen({ route }) {
   
     try {
       const response = await axios.put(
-        `http://192.168.1.9:3000/api/decks/${deckId}/title`, 
+        `http://192.168.1.6:3000/api/decks/${deckId}/title`, 
         { title: newTitle },
         { params: { email } }
       );
