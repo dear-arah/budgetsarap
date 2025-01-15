@@ -26,13 +26,26 @@ function TabLayout({ navigation }: { navigation: any }) {
   // Fetch the user's data from AsyncStorage
   useEffect(() => {
     const getUserData = async () => {
-      const name = await AsyncStorage.getItem('userName');
       const email = await AsyncStorage.getItem('userEmail');
-      if (name) setUserName(name);
-      if (email) setUserEmail(email);
+      if (email) {
+        setUserEmail(email);
+
+        try {
+          // Fetch the user's username from the backend based on their email
+          const response = await axios.get(`http://192.168.1.6:3000/api/user/username?email=${email}`);
+          if (response.data.status === 'ok') {
+            setUserName(response.data.data.name); // Set username from the backend response
+          } else {
+            console.error('Failed to fetch username');
+          }
+        } catch (error) {
+          console.error('Error fetching username:', error);
+        }
+      }
     };
     getUserData();
   }, []);
+
 
   const addDeck = async () => {
     if (!deckTitle.trim()) {
@@ -116,12 +129,12 @@ const handleLogout = async () => {
       <Ionicons name="person-circle" size={100} color="#3C096C" style={styles.profileIcon} />
 
       {/* Greeting Text */}
-      <Text style={styles.profileText}>
-  Hello, {userName ? userName : 'User'}! {/* Display the user's name here */}
-</Text>
-<Text style={styles.profileText}>
-  {userEmail ? userEmail : 'Not Available'} {/* Display the user's email here */}
-</Text>
+            <Text style={styles.profileText}>
+              Hello, {userName ? userName : 'User'}! {/* Display the user's name here */}
+            </Text>
+            <Text style={styles.profileText}>
+              {userEmail ? userEmail : 'Not Available'} {/* Display the user's email here */}
+            </Text>
 
 
       {/* Log Out Button */}
@@ -142,7 +155,7 @@ const handleLogout = async () => {
           <View style={styles.logoutModalOverlay}>
             <View style={styles.logoutModalContent}>
               <Text style={styles.confirmationText}>
-                Do you want to log out your account?
+                Do you want to log out of Quiztopia?
               </Text>
               <View style={styles.confirmationButtons}>
                 <TouchableOpacity

@@ -172,6 +172,27 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
+
+//get ng username
+app.get('/api/user/username', async (req, res) => {
+    const { email } = req.query;
+  
+    if (!email) {
+      return res.status(400).send({ status: 'error', data: 'Email is required' });
+    }
+  
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).send({ status: 'error', data: 'User not found' });
+      }
+  
+      res.send({ status: 'ok', data: { name: user.name } }); // Send back the username
+    } catch (error) {
+      res.status(500).send({ status: 'error', data: 'Server error' });
+    }
+  });
+
 // Route to update a flashcard
 app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
