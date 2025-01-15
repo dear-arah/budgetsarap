@@ -32,7 +32,7 @@ function FlashcardPage({ route }) {
         }
 
         const response = await axios.get(
-          `http://192.168.1.9:3000/api/decks/${deckId}`,
+          `http://192.168.1.6:3000/api/decks/${deckId}`,
           { params: { email: storedEmail } } // Pass email in query parameters
         );
 

@@ -19,7 +19,7 @@ function HomePage() {
     if (!email) return;
 
     try {
-      const response = await axios.get('http://192.168.1.9:3000/api/decks', { params: { email } });
+      const response = await axios.get('http://192.168.1.6:3000/api/decks', { params: { email } });
       const decks = response.data.data;
       setMyDecks(decks);
       setFavorites(decks.filter((deck) => deck.isFavorite));
@@ -42,7 +42,7 @@ function HomePage() {
 
   const toggleFavorite = async (deckId) => {
     try {
-      const response = await axios.patch(`http://192.168.1.9:3000/api/decks/${deckId}/toggle-favorite`, { email });
+      const response = await axios.patch(`http://192.168.1.6:3000/api/decks/${deckId}/toggle-favorite`, { email });
       const updatedDeck = response.data.data;
 
       setMyDecks((prev) =>
@@ -76,7 +76,7 @@ function HomePage() {
     }
   
     try {
-      await axios.delete(`http://192.168.1.9:3000/api/decks/${deckToDelete._id}`, {
+      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckToDelete._id}`, {
         data: { email } // Send the email in the request body
       });
   
