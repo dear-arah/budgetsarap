@@ -64,6 +64,7 @@ app.post('/register', async(req, res) => {
     }
 });
 
+
 app.post("/login-user", async(req, res)=>{
     const {email, password} = req.body;
     const oldUser = await User.findOne({email: email});
@@ -82,26 +83,6 @@ app.post("/login-user", async(req, res)=>{
 
 })
 
-//get ng username
-app.get('/api/user/username', async (req, res) => {
-    const { email } = req.query;
-  
-    if (!email) {
-      return res.status(400).send({ status: 'error', data: 'Email is required' });
-    }
-  
-    try {
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(404).send({ status: 'error', data: 'User not found' });
-      }
-  
-      res.send({ status: 'ok', data: { name: user.name } }); // Send back the username
-    } catch (error) {
-      res.status(500).send({ status: 'error', data: 'Server error' });
-    }
-  });
-
 
 // Deck Routes
 app.post('/api/decks/create-deck', authenticateUser, async (req, res) => {
@@ -118,6 +99,7 @@ app.post('/api/decks/create-deck', authenticateUser, async (req, res) => {
         res.status(400).send({ status: 'error', data: err.message });
     }
 });
+
 
 app.post('/api/decks/add-flashcard', authenticateUser, async (req, res) => {
     const { deckId, question, answer } = req.body;
@@ -190,6 +172,27 @@ app.patch('/api/decks/:deckId/toggle-favorite', authenticateUser, async (req, re
     }
 });
 
+
+//get ng username
+app.get('/api/user/username', async (req, res) => {
+    const { email } = req.query;
+  
+    if (!email) {
+      return res.status(400).send({ status: 'error', data: 'Email is required' });
+    }
+  
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).send({ status: 'error', data: 'User not found' });
+      }
+  
+      res.send({ status: 'ok', data: { name: user.name } }); // Send back the username
+    } catch (error) {
+      res.status(500).send({ status: 'error', data: 'Server error' });
+    }
+  });
+
 // Route to update a flashcard
 app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
@@ -224,7 +227,6 @@ app.put('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (r
     }
 });
 
-// Route to update the deck title
 app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
     const { deckId } = req.params;
     const { title } = req.body; // The updated title
@@ -244,7 +246,7 @@ app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
             return res.status(404).send({ status: 'error', data: 'Deck not found' });
         }
 
-        // Update the title of the deck
+        // Update the deck's title
         deck.title = title;
 
         // Save the updated deck
@@ -256,6 +258,7 @@ app.put('/api/decks/:deckId/title', authenticateUser, async (req, res) => {
         res.status(500).send({ status: 'error', data: 'Server error' });
     }
 });
+
 
 app.delete('/api/decks/:deckId/flashcards/:flashcardId', authenticateUser, async (req, res) => {
     const { deckId, flashcardId } = req.params;
@@ -307,7 +310,6 @@ app.delete('/api/decks/:deckId', authenticateUser, async (req, res) => {
     }
 });
   
-
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
 });

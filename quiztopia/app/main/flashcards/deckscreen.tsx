@@ -157,8 +157,7 @@ function DeckScreen({ route }) {
     try {
       const response = await axios.put(
         `http://192.168.1.9:3000/api/decks/${deckId}/title`, 
-        { title: newTitle },
-        { params: { email } }
+        { title: newTitle, email }  // Include email in the request body
       );
   
       if (response.data.status === 'ok') {
@@ -173,11 +172,6 @@ function DeckScreen({ route }) {
       alert('Failed to update deck title. Please try again.');
     }
   };
-  
-  const closeEditDeckModal = () => {
-    setNewDeckTitle('');
-    setEditDeckModalVisible(false);
-  };  
   
 
   return (
