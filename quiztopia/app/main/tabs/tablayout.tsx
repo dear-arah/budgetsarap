@@ -195,7 +195,7 @@ const closeProfileModal = () => {
               <View style={styles.logoutModalOverlay}>
                 <View style={styles.logoutModalContent}>
                   <Text style={styles.confirmationText}>
-                    Do you want to log out your account?
+                  Do you want to log out of Quiztopia?
                   </Text>
                   <View style={styles.confirmationButtons}>
                     <TouchableOpacity
