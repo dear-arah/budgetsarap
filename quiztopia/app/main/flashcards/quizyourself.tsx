@@ -6,15 +6,77 @@ import {
   StyleSheet,
   Animated,
   TouchableWithoutFeedback,
+  Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
+
+const saveQuizResult = async (deckTitle, quizType, score, total) => {
+  try {
+    const newEntry = {
+      deckTitle,
+      quizType,
+      date: new Date().toLocaleDateString(),
+      score: `${score}/${total}`,
+    };
+
+    const existingHistory = await AsyncStorage.getItem('quizHistory');
+    const updatedHistory = existingHistory ? JSON.parse(existingHistory) : [];
+    
+    // Check if the entry already exists
+    const isDuplicate = updatedHistory.some(
+      (entry) =>
+        entry.deckTitle === newEntry.deckTitle &&
+        entry.quizType === newEntry.quizType &&
+        entry.date === newEntry.date
+    );
+
+    if (!isDuplicate) {
+      updatedHistory.push(newEntry);
+      await AsyncStorage.setItem('quizHistory', JSON.stringify(updatedHistory));
+    }
+  } catch (error) {
+    console.error('Error saving quiz result:', error);
+  }
+};
 
 function QuizYourself({ route, navigation }) {
-  const { flashcards } = route.params;
+  const { flashcards, deckId, deckTitle: initialDeckTitle } = route.params || {};
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [deckTitle, setDeckTitle] = useState(initialDeckTitle || 'Untitled Deck');
   const progress = useRef(new Animated.Value(0)).current; // Persist Animated.Value
+
+  useEffect(() => {
+    // Fetch the deck title only if not provided
+    if (!initialDeckTitle) {
+      const fetchDeckTitle = async () => {
+        try {
+          const storedEmail = await AsyncStorage.getItem('userEmail');
+          if (!storedEmail) {
+            Alert.alert('Error', 'User email not found. Please log in again.');
+            return;
+          }
+
+          const response = await axios.get(
+            `http://192.168.1.9:3000/api/decks/${deckId}`,
+            { params: { email: storedEmail } }
+          );
+
+          const { title } = response.data.data;
+          setDeckTitle(title || 'Untitled Deck');
+        } catch (err) {
+          console.error('Error fetching deck title:', err);
+          Alert.alert('Error', 'Failed to load deck title. Please try again.');
+        }
+      };
+
+      fetchDeckTitle();
+    }
+  }, [deckId, initialDeckTitle]);
 
   useEffect(() => {
     Animated.timing(progress, {
@@ -42,18 +104,25 @@ function QuizYourself({ route, navigation }) {
   };
 
   if (showResult) {
+    saveQuizResult(deckTitle, 'Quiz Yourself', score, flashcards.length);
     return (
       <View style={styles.container}>
-        <Text style={styles.resultText}>Quiz Completed!</Text>
-        <Text style={styles.resultText}>
+        <View style={styles.area}> 
+        <Image
+                style={styles.sun}
+                source={require("../../../assets/images/amazing.png")}
+        />
+        <Text style={styles.resultText1}>Quiz Completed!</Text>
+        <Text style={styles.resultText2}>
           Your Score: {score}/{flashcards.length}
         </Text>
         <TouchableOpacity
           style={styles.homeButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.buttonText}>Back to Flashcards</Text>
+          <Text style={styles.buttonText}>Back to Quiz Types</Text>
         </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -98,20 +167,20 @@ function QuizYourself({ route, navigation }) {
 
       <View style={styles.answerCheckContainer}>
         <Text style={styles.promptText}>
-          Did you get it correct? Press ✔️ for Yes or ❌ for No.
+          Did you get it correct? Press ✔ for Yes or ✖ for No.
         </Text>
         <View style={styles.answerButtons}>
-          <TouchableOpacity
-            style={styles.correctButton}
-            onPress={() => handleAnswerCheck(true)}
-          >
-            <Text style={styles.buttonText}>✔️</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.wrongButton}
             onPress={() => handleAnswerCheck(false)}
           >
-            <Text style={styles.buttonText}>❌</Text>
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.correctButton}
+            onPress={() => handleAnswerCheck(true)}
+          >
+            <Ionicons name="checkmark" size={30} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -122,7 +191,7 @@ function QuizYourself({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 },
-  scoreText: { fontSize: 16, fontWeight: 'bold' },
+  scoreText: { fontSize: 16, fontWeight: 'bold', color:'#3C096C' },
   progressBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,11 +208,12 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#6200ea',
+    backgroundColor: '#5A189A',
   },
   percentageText: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: '#5A189A',
   },
   card: {
     width: '80%',
@@ -163,18 +233,35 @@ const styles = StyleSheet.create({
   cardFront: { backgroundColor: '#fff' },
   cardBack: { backgroundColor: '#f9f9f9' },
   cardText: { fontSize: 18, textAlign: 'center' },
-  answerCheckContainer: { alignItems: 'center', marginTop: 20 },
-  promptText: { fontSize: 14, marginBottom: 10 },
+  answerCheckContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+  promptText: { fontSize: 14, marginBottom: 10, textAlign: 'center',},
   answerButtons: { flexDirection: 'row', justifyContent: 'space-between', width: '60%' },
-  correctButton: { backgroundColor: 'green', padding: 15, borderRadius: 10, marginHorizontal: 5 },
-  wrongButton: { backgroundColor: 'red', padding: 15, borderRadius: 10, marginHorizontal: 5 },
+  correctButton: { backgroundColor: '#4B6F44', padding: 15, borderRadius: 4, marginHorizontal: 5, width: '70%', alignItems: 'center',},
+  wrongButton: { backgroundColor: '#97233F', padding: 15, borderRadius: 4, marginHorizontal: 5, width: '70%', alignItems: 'center',},
   buttonText: { color: '#fff', textAlign: 'center' },
-  resultText: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
+  resultText1: { fontSize: 18, fontWeight: 'bold', textAlign: 'center'},
+  resultText2: { fontSize: 14, textAlign: 'center', marginBottom: 10 },
   homeButton: {
     marginTop: 20,
     padding: 15,
     backgroundColor: '#ffa500',
     borderRadius: 5,
+  },
+  area:{
+    backgroundColor: '#fff', 
+    padding: 20,
+    width: '90%',
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    elevation: 2,
+  },
+  sun:{
+    height: 120,
+    width: 120,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
 });
 

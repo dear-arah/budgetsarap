@@ -7,30 +7,90 @@ import {
   StyleSheet,
   Animated,
   ScrollView,
+  Alert,
+  Image
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+const saveQuizResult = async (deckTitle, quizType, score, total) => {
+  try {
+    const newEntry = {
+      deckTitle,
+      quizType,
+      date: new Date().toLocaleDateString(),
+      score: `${score}/${total}`,
+    };
+
+    const existingHistory = await AsyncStorage.getItem('quizHistory');
+    const updatedHistory = existingHistory ? JSON.parse(existingHistory) : [];
+    
+    // Check if the entry already exists
+    const isDuplicate = updatedHistory.some(
+      (entry) =>
+        entry.deckTitle === newEntry.deckTitle &&
+        entry.quizType === newEntry.quizType &&
+        entry.date === newEntry.date
+    );
+
+    if (!isDuplicate) {
+      updatedHistory.push(newEntry);
+      await AsyncStorage.setItem('quizHistory', JSON.stringify(updatedHistory));
+    }
+  } catch (error) {
+    console.error('Error saving quiz result:', error);
+  }
+};
 
 function IdentificationQuiz({ route, navigation }) {
-  const { flashcards } = route.params;
+  const { flashcards, deckId, deckTitle: initialDeckTitle } = route.params || {};
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [score, setScore] = useState(0);
   const [showScoreScreen, setShowScoreScreen] = useState(false);
   const [showReviewScreen, setShowReviewScreen] = useState(false);
   const [localFlashcards, setLocalFlashcards] = useState([]);
-  const progress = useRef(new Animated.Value(0)).current; // Persist Animated.Value
+  const [deckTitle, setDeckTitle] = useState(initialDeckTitle || 'Untitled Deck');
+  const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Initialize local flashcards for tracking user answers
+    // Fetch the deck title only if not provided
+    if (!initialDeckTitle) {
+      const fetchDeckTitle = async () => {
+        try {
+          const storedEmail = await AsyncStorage.getItem('userEmail');
+          if (!storedEmail) {
+            Alert.alert('Error', 'User email not found. Please log in again.');
+            return;
+          }
+
+          const response = await axios.get(
+            `http://192.168.1.9:3000/api/decks/${deckId}`,
+            { params: { email: storedEmail } }
+          );
+
+          const { title } = response.data.data;
+          setDeckTitle(title || 'Untitled Deck');
+        } catch (err) {
+          console.error('Error fetching deck title:', err);
+          Alert.alert('Error', 'Failed to load deck title. Please try again.');
+        }
+      };
+
+      fetchDeckTitle();
+    }
+  }, [deckId, initialDeckTitle]);
+
+  useEffect(() => {
     setLocalFlashcards([...flashcards]);
   }, [flashcards]);
 
   useEffect(() => {
-    // Animate the progress bar when the question index changes
     Animated.timing(progress, {
-        toValue: currentIndex / flashcards.length, // Start at 0% progress
-        duration: 300,
-        useNativeDriver: false,
-      }).start();      
+      toValue: currentIndex / flashcards.length,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   }, [currentIndex]);
 
   const handleAnswerSubmit = () => {
@@ -40,7 +100,6 @@ function IdentificationQuiz({ route, navigation }) {
 
     if (isCorrect) setScore((prev) => prev + 1);
 
-    // Update local flashcards with user answers
     const updatedFlashcards = localFlashcards.map((card, index) =>
       index === currentIndex
         ? { ...card, userAnswer: userAnswer.trim(), isCorrect }
@@ -88,65 +147,63 @@ function IdentificationQuiz({ route, navigation }) {
           style={styles.homeButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.buttonText}>Back to Flashcards</Text>
+          <Text style={styles.buttonText}>Back to Quiz Types</Text>
         </TouchableOpacity>
       </ScrollView>
     );
   }
 
   if (showScoreScreen) {
+    saveQuizResult(deckTitle, 'Identification Quiz', score, flashcards.length);
     return (
       <View style={styles.container}>
-        <Text style={styles.resultText}>Quiz Completed!</Text>
-        <Text style={styles.resultText}>
-          Your Score: {score}/{flashcards.length}
-        </Text>
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={handleReviewResults}
-        >
-          <Text style={styles.buttonText}>Review Results</Text>
-        </TouchableOpacity>
-      </View>
+                    <View style={styles.area}> 
+                    <Image
+                      style={styles.sun}
+                      source={require("../../../assets/images/amazing.png")}
+                    />
+                    <Text style={styles.resultText1}>Quiz Completed!</Text>
+                    <Text style={styles.resultText2}>
+                      Your Score: {score}/{flashcards.length}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.homeButton}
+                      onPress={handleReviewResults}
+                    >
+                      <Text style={styles.buttonText}>Review Results</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
     );
   }
 
   return (
     <View style={styles.container}>
-        <Text style={styles.scoreText}>
-      Score: {score}/{flashcards.length}
-    </Text>
+      <Text style={styles.scoreText}>
+        Score: {score}/{flashcards.length}
+      </Text>
       <View style={styles.header}>
-  <View style={styles.scoreContainer}>
-  </View>
-  <View style={styles.progressBarWrapper}>
-    <View style={styles.progressBarContainer}>
-      <Animated.View
-        style={[
-          styles.progressBar,
-          {
-            width: progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0%', '100%'],
-            }),
-            backgroundColor: '#6200ea',
-          },
-        ]}
-      />
-    </View>
-    <Text style={styles.percentageText}>
-      {Math.round((currentIndex / flashcards.length) * 100)}%
-    </Text>
-  </View>
-</View>
-
-        <View style={styles.card}>
-                <Text style={styles.question}>Question:</Text>
-                <Text style={styles.cardText}>{flashcards[currentIndex].question}</Text>
+        <View style={styles.progressBarContainer}>
+          <Animated.View
+            style={[
+              styles.progressBar,
+              {
+                width: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }),
+              },
+            ]}
+          />
         </View>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.question}>Question:</Text>
+        <Text style={styles.cardText}>{flashcards[currentIndex].question}</Text>
+      </View>
       <TextInput
         style={styles.input}
-        placeholder="Type your answer here"
+        placeholder="Type your answer here..."
         value={userAnswer}
         onChangeText={setUserAnswer}
       />
@@ -174,10 +231,7 @@ const styles = StyleSheet.create({
         width: '100%', // Ensures the score text stays centered
         marginBottom: 10,
       },
-      scoreText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
+      scoreText: { fontSize: 16, fontWeight: 'bold', color:'#3C096C' },
       progressBarWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -208,7 +262,7 @@ const styles = StyleSheet.create({
         elevation: 3,
         justifyContent: 'center', // Center content vertically
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 20,
     },
     question:{
         fontSize: 15,
@@ -219,20 +273,19 @@ const styles = StyleSheet.create({
       },    
     input: {
       borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-      padding: 10,
+      borderColor: '#b19dc4',
+      borderRadius: 4,
+      padding: 20,
       marginBottom: 20,
       width: '100%',
     },
-    submitButton: { backgroundColor: '#6200ea', padding: 15, borderRadius: 8 },
+    submitButton: { backgroundColor: '#3C096C', padding: 15, marginVertical: 4, borderRadius: 10, width: '100%' },
     buttonText: { color: '#fff', fontSize: 16, textAlign: 'center' },
-    resultText: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
     reviewCard: { padding: 10, borderRadius: 5, backgroundColor: '#f9f9f9', marginBottom: 10 },
     reviewQuestion: { fontSize: 16, marginBottom: 5 },
     reviewAnswer: { fontSize: 14, marginBottom: 5 },
-    correctAnswer: { color: 'green', fontSize: 14 },
-    wrongAnswer: { color: 'red', fontSize: 14 },
+    correctAnswer: { color: '#00563B', fontSize: 14 },
+    wrongAnswer: { color: '#C60C30', fontSize: 14 },
     scrollViewContent: { padding: 20 },
     homeButton: {
       marginTop: 20,
@@ -240,6 +293,31 @@ const styles = StyleSheet.create({
       backgroundColor: '#ffa500',
       borderRadius: 5,
     },
+    area:{
+      backgroundColor: '#fff', 
+      padding: 20,
+      width: '90%',
+      height: '50%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 20,
+      elevation: 2,
+    },
+    sun:{
+      height: 120,
+      width: 120,
+      resizeMode: 'contain',
+      marginBottom: 10,
+    },
+    resultText:{
+      marginTop: 30,
+      marginBottom: 10,
+      fontSize: 18, 
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    resultText1: { fontSize: 18, fontWeight: 'bold', textAlign: 'center'},
+    resultText2: { fontSize: 14, textAlign: 'center', marginBottom: 10 },
 });
 
 export default IdentificationQuiz;

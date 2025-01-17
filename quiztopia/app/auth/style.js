@@ -2,25 +2,27 @@ import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   mainContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#240046',
   },
   headerContainer: {
     backgroundColor: '#240046', // Violet background
-    height: 350, // Adjust to your desired height
+    height: 300, // Adjust to your desired height
+    marginTop: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: 10, // Rounded corners at the bottom
-    borderBottomRightRadius: 10,
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: 70,
-    borderBottomRightRadius: 70,
+  },
+  signuplogoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -70,
   },
   logo: {
-    height: 150,
-    width: 150,
+    height: 100,
+    width: 100,
   },
   loginContainer: {
     backgroundColor: '#fff',
@@ -28,15 +30,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 30,
-    marginTop: -30, 
+    marginTop: -20, 
+    height: '100%',
   },
   signupContainer: {
     backgroundColor: '#fff',
+    height: '100%',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 30,
-    marginTop: -30, // Pulls the signup container closer to the header
+    marginTop: -90, // Pulls the signup container closer to the header
     borderWidth: 1, // Optional: Add a border for distinction
     borderColor: '#eee', 
   },
@@ -74,10 +78,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 50,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 6,
+    elevation: 4,
   },
   textSign: {
     fontSize: 18,
@@ -91,14 +92,19 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#420475',
     borderRadius: 50,
+    elevation: 6,
   },
   textSign2: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#420475',
+  },
+  smallIcon:{
+    marginRight: 2,
+  },
+  rightArrow:{
+    marginLeft: 4,
   },
 });
 

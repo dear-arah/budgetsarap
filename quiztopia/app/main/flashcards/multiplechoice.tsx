@@ -6,10 +6,42 @@ import {
   StyleSheet,
   Animated,
   ScrollView,
+  Image
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+const saveQuizResult = async (deckTitle, quizType, score, total) => {
+  try {
+    const newEntry = {
+      deckTitle,
+      quizType,
+      date: new Date().toLocaleDateString(),
+      score: `${score}/${total}`,
+    };
+
+    const existingHistory = await AsyncStorage.getItem('quizHistory');
+    const updatedHistory = existingHistory ? JSON.parse(existingHistory) : [];
+    
+    // Check if the entry already exists
+    const isDuplicate = updatedHistory.some(
+      (entry) =>
+        entry.deckTitle === newEntry.deckTitle &&
+        entry.quizType === newEntry.quizType &&
+        entry.date === newEntry.date
+    );
+
+    if (!isDuplicate) {
+      updatedHistory.push(newEntry);
+      await AsyncStorage.setItem('quizHistory', JSON.stringify(updatedHistory));
+    }
+  } catch (error) {
+    console.error('Error saving quiz result:', error);
+  }
+};
 
 function MultipleChoiceQuiz({ route, navigation }) {
-  const { flashcards } = route.params;
+  const { flashcards, deckId, deckTitle: initialDeckTitle } = route.params || {};
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
@@ -19,7 +51,36 @@ function MultipleChoiceQuiz({ route, navigation }) {
   const [localFlashcards, setLocalFlashcards] = useState([]);
   const [highlightedAnswers, setHighlightedAnswers] = useState({});
   const [options, setOptions] = useState([]); // Store the options for the current question
+  const [deckTitle, setDeckTitle] = useState(initialDeckTitle || 'Untitled Deck');
   const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Fetch the deck title only if not provided
+    if (!initialDeckTitle) {
+      const fetchDeckTitle = async () => {
+        try {
+          const storedEmail = await AsyncStorage.getItem('userEmail');
+          if (!storedEmail) {
+            Alert.alert('Error', 'User email not found. Please log in again.');
+            return;
+          }
+
+          const response = await axios.get(
+            `http://192.168.1.9:3000/api/decks/${deckId}`,
+            { params: { email: storedEmail } }
+          );
+
+          const { title } = response.data.data;
+          setDeckTitle(title || 'Untitled Deck');
+        } catch (err) {
+          console.error('Error fetching deck title:', err);
+          Alert.alert('Error', 'Failed to load deck title. Please try again.');
+        }
+      };
+
+      fetchDeckTitle();
+    }
+  }, [deckId, initialDeckTitle]);
 
   useEffect(() => {
     setLocalFlashcards([...flashcards]); // Copy the flashcards into a local state
@@ -78,6 +139,7 @@ function MultipleChoiceQuiz({ route, navigation }) {
   };
 
   if (showResult) {
+    saveQuizResult(deckTitle, 'Multiplechoice Quiz', score, flashcards.length);
     return reviewMode ? (
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <Text style={styles.resultText}>Review Results</Text>
@@ -103,22 +165,28 @@ function MultipleChoiceQuiz({ route, navigation }) {
           style={styles.homeButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.buttonText}>Back to Flashcards</Text>
+          <Text style={styles.buttonText}>Back to Quiz Types</Text>
         </TouchableOpacity>
       </ScrollView>
     ) : (
       <View style={styles.container}>
-        <Text style={styles.resultText}>Quiz Completed!</Text>
-        <Text style={styles.resultText}>
-          Your Score: {score}/{flashcards.length}
-        </Text>
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => setReviewMode(true)}
-        >
-          <Text style={styles.buttonText}>Review Results</Text>
-        </TouchableOpacity>
-      </View>
+              <View style={styles.area}> 
+              <Image
+                      style={styles.sun}
+                      source={require("../../../assets/images/amazing.png")}
+              />
+              <Text style={styles.resultText1}>Quiz Completed!</Text>
+              <Text style={styles.resultText2}>
+                Your Score: {score}/{flashcards.length}
+              </Text>
+              <TouchableOpacity
+                style={styles.homeButton}
+                onPress={() => setReviewMode(true)}
+              >
+                <Text style={styles.buttonText}>Review Results</Text>
+              </TouchableOpacity>
+              </View>
+            </View>
     );
   }
 
@@ -153,7 +221,7 @@ function MultipleChoiceQuiz({ route, navigation }) {
         </Text>
       </View>
 
-      <View>
+      <View style={styles.optionsArea}>
         {options.map((option, index) => (
           <TouchableOpacity
             key={index}
@@ -175,9 +243,10 @@ function MultipleChoiceQuiz({ route, navigation }) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  scoreText: { fontSize: 16, fontWeight: 'bold' },
+  scoreText: { fontSize: 16, fontWeight: 'bold', color: '#3C096C', },
   progressBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,12 +265,13 @@ const styles = StyleSheet.create({
   
   progressBar: {
     height: '100%',
-    backgroundColor: '#6200ea', // Purple color for the animated bar
+    backgroundColor: '#5A189A', // Purple color for the animated bar
   },
   
   percentageText: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: '#5A189A',
   },
 
   card: { 
@@ -226,11 +296,13 @@ cardText: {
     fontSize: 18, 
     textAlign: 'center',
   },    
-  optionButton: { backgroundColor: '#6200ea', padding: 15, marginVertical: 4, borderRadius: 10, width: '90%' },
-  correctOption: { backgroundColor: 'green' },
-  wrongOption: { backgroundColor: 'red' },
+  optionsArea:{
+    width: '80%',
+  },
+  optionButton: { backgroundColor: '#3C096C', padding: 15, marginVertical: 4, borderRadius: 10, width: '100%' },
+  correctOption: { backgroundColor: '#4B6F44' },
+  wrongOption: { backgroundColor: '#97233F' },
   buttonText: { color: '#fff', textAlign: 'center' },
-  resultText: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
   homeButton: {
     marginTop: 20,
     padding: 15,
@@ -238,20 +310,45 @@ cardText: {
     borderRadius: 5,
   },
   reviewCard: {
+    width: '100%',
     marginBottom: 10,
     padding: 15,
     backgroundColor: '#fff',
     borderRadius: 5,
     elevation: 2,
   },
-  reviewAnswer: { fontSize: 14, marginVertical: 5 },
-  correctAnswer: { color: 'green' },
-  wrongAnswer: { color: 'red' },
+  reviewAnswer: { fontSize: 14, marginVertical: 5, },
+  correctAnswer: { color: '#00563B', fontSize: 14 },
+  wrongAnswer: { color: '#C60C30', fontSize: 14 },
   scrollViewContent: {
     alignItems: 'center', // Center content horizontally
     justifyContent: 'center', // Center content vertically
     padding: 20, // Add padding if needed
-  },  
+  },
+  area:{
+    backgroundColor: '#fff', 
+    padding: 20,
+    width: '90%',
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    elevation: 2,
+  },
+  sun:{
+    height: 120,
+    width: 120,
+    resizeMode: 'contain',
+    marginBottom: 10,
+  },
+  resultText:{
+    marginTop: 30,
+    marginBottom: 10,
+    fontSize: 18, 
+    fontWeight: 'bold',
+  },
+  resultText1: { fontSize: 18, fontWeight: 'bold', textAlign: 'center'},
+  resultText2: { fontSize: 14, textAlign: 'center', marginBottom: 10 },
 });
 
 export default MultipleChoiceQuiz;

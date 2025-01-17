@@ -6,13 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Import 
 import LoginScreen from './auth/login';
 import SignUpPage from './auth/signup';
 import TabLayout from './main/tabs/tablayout';
-//import FolderScreen from './main/flashcards/folderscreen';
 import DeckScreen from './main/flashcards/deckscreen';
 import FlashcardPage from './main/flashcards/flashcardpage';
 import QuizPage from './main/flashcards/quizpage';
 import QuizYourself from './main/flashcards/quizyourself';
 import IdentificationQuiz from './main/flashcards/identificationquiz';
 import MultipleChoiceQuiz from './main/flashcards/multiplechoice';
+import { StatusBar } from 'react-native';
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,23 +46,30 @@ export default function RootLayout() {
   const Stack = createNativeStackNavigator();
 
   return (
-    <Stack.Navigator
-      initialRouteName={isAuthenticated ? 'Tabs' : 'Login'} // Dynamically set the initial route
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpPage} />
-      <Stack.Screen name="Tabs" component={TabLayout} />
-      <Stack.Screen name="Deck" component={DeckScreen} />
-      <Stack.Screen name="FlashcardPage" component={FlashcardPage} />
-      <Stack.Screen name="QuizPage" component={QuizPage} />
-      <Stack.Screen name="QuizYourself" component={QuizYourself} />
-      <Stack.Screen name="IdentificationQuiz" component={IdentificationQuiz} />
-      <Stack.Screen name="MultipleChoiceQuiz" component={MultipleChoiceQuiz} />
-
-
-    </Stack.Navigator>
+    <>
+      {/* Configure the StatusBar */}
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+      />
+      <Stack.Navigator
+        initialRouteName={isAuthenticated ? 'Tabs' : 'Login'} // Dynamically set the initial route
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} options={{
+            animation: 'slide_from_left',}}/>
+        <Stack.Screen name="SignUp" component={SignUpPage} options={{
+            animation: 'slide_from_right',}}/>
+        <Stack.Screen name="Tabs" component={TabLayout} />
+        <Stack.Screen name="Deck" component={DeckScreen} />
+        <Stack.Screen name="FlashcardPage" component={FlashcardPage} />
+        <Stack.Screen name="QuizPage" component={QuizPage} />
+        <Stack.Screen name="QuizYourself" component={QuizYourself} />
+        <Stack.Screen name="IdentificationQuiz" component={IdentificationQuiz} />
+        <Stack.Screen name="MultipleChoiceQuiz" component={MultipleChoiceQuiz} />
+      </Stack.Navigator>
+    </>
   );
 }

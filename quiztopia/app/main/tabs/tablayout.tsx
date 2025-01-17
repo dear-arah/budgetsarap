@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Modal,
   TouchableWithoutFeedback,
   TextInput,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './home';
@@ -22,6 +25,7 @@ function TabLayout({ navigation }: { navigation: any }) {
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [userName, setUserName] = useState<string | null>(null); // State to store the user's name
   const [userEmail, setUserEmail] = useState<string | null>(null); // State to store the user's email
+  const slideAnim = useRef(new Animated.Value(300)).current; // Initial position (off-screen right)
 
   // Fetch the user's data from AsyncStorage
   useEffect(() => {
@@ -47,7 +51,7 @@ function TabLayout({ navigation }: { navigation: any }) {
     }
 
     try {
-        const response = await axios.post('http://192.168.1.6:3000/api/decks/create-deck', {
+        const response = await axios.post('http://192.168.1.9:3000/api/decks/create-deck', {
             email, // Send user email
             title: deckTitle,
         });
@@ -56,6 +60,11 @@ function TabLayout({ navigation }: { navigation: any }) {
             alert('Deck added successfully');
             setDeckTitle(''); // Clear input after adding
             setModalVisible(false);
+
+             // Increment and save the total number of decks created
+            const decksCreated = await AsyncStorage.getItem('totalDecksCreated');
+            const newCount = decksCreated ? parseInt(decksCreated, 10) + 1 : 1;
+            await AsyncStorage.setItem('totalDecksCreated', newCount.toString());
 
             // Navigate to DeckScreen with the new deck's ID
             console.log('Navigating to DeckScreen with deckId:', response.data.data._id);
@@ -69,6 +78,30 @@ function TabLayout({ navigation }: { navigation: any }) {
     }
 };
 
+  //sa tablayout
+  // Fetch the user's data from AsyncStorage
+  useEffect(() => {
+    const getUserData = async () => {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (email) {
+        setUserEmail(email);
+
+        try {
+          // Fetch the user's username from the backend based on their email
+          const response = await axios.get(`http://192.168.1.9:3000/api/user/username?email=${email}`);
+          if (response.data.status === 'ok') {
+            setUserName(response.data.data.name); // Set username from the backend response
+          } else {
+            console.error('Failed to fetch username');
+          }
+        } catch (error) {
+          console.error('Error fetching username:', error);
+        }
+      }
+    };
+    getUserData();
+  }, []);
+
   
 const handleLogout = async () => {
   alert('You have logged out.');
@@ -76,6 +109,23 @@ const handleLogout = async () => {
   navigation.navigate('Login'); // Redirect to login screen
 };
 
+ // Slide-in animation effect
+ const openProfileModal = () => {
+  Animated.timing(slideAnim, {
+    toValue: 0, // Slide into visible position
+    duration: 300,
+    easing: Easing.in(Easing.ease), // Smooth easing effect
+    useNativeDriver: true,
+  }).start(() => setProfileModalVisible(true)); // Set modal visible after animation
+};
+
+const closeProfileModal = () => {
+  Animated.timing(slideAnim, {
+    toValue: 300, // Slide back to off-screen
+    duration: 300,
+    useNativeDriver: true,
+  }).start(() => setProfileModalVisible(false)); // Hide modal after animation
+};
 
   const renderScreen = () => {
     switch (currentTab) {
@@ -88,80 +138,82 @@ const handleLogout = async () => {
     }
   };
 
+
   return (
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerContainer}>
         <View style={styles.logoContainer}>
-          {/* Add your logo image or text here */}
+        <Image
+              style={styles.logo}
+              source={require("../../../assets/images/Qlogo.png")}
+            />
           <Text style={styles.logoText}>Quiztopia</Text>
         </View>
-        <TouchableOpacity onPress={() => setProfileModalVisible(true)}>
-  <Ionicons name="person-circle" size={30} color="white" />
-</TouchableOpacity>
-
-      </View>
-      <Modal
-  transparent={true}
-  visible={isProfileModalVisible}
-  animationType="slide"
-  onRequestClose={() => setProfileModalVisible(false)} // Close modal on back press
->
-  <View style={styles.profileModalContainer}>
-    <TouchableWithoutFeedback onPress={() => setProfileModalVisible(false)}>
-      <View style={styles.profileModalOverlay} />
-    </TouchableWithoutFeedback>
-    <View style={styles.profileModalContent}>
-      {/* Profile Icon */}
-      <Ionicons name="person-circle" size={100} color="#3C096C" style={styles.profileIcon} />
-
-      {/* Greeting Text */}
-      <Text style={styles.profileText}>
-  Hello, {userName ? userName : 'User'}! {/* Display the user's name here */}
-</Text>
-<Text style={styles.profileText}>
-  {userEmail ? userEmail : 'Not Available'} {/* Display the user's email here */}
-</Text>
-
-
-      {/* Log Out Button */}
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={() => setShowLogoutConfirmation(true)} // Show confirmation dialog
-      >
-        <Text style={styles.logoutText}>Log Out</Text>
+        <TouchableOpacity onPress={openProfileModal}>
+        <Ionicons name="person-circle" size={30} color="white" />
       </TouchableOpacity>
-
-      {/* Log Out Confirmation Modal */}
-      {showLogoutConfirmation && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowLogoutConfirmation(false)}
+      </View>
+      
+      {/* Profile Modal */}
+      <Modal
+        transparent={true}
+        visible={isProfileModalVisible}
+        animationType="none" // Disable default animation to use custom animation
+        onRequestClose={closeProfileModal}
+      >
+        <TouchableWithoutFeedback onPress={closeProfileModal}>
+          <View style={styles.profileModalOverlay} />
+        </TouchableWithoutFeedback>
+        <Animated.View
+          style={[
+            styles.profileModalContent,
+            { transform: [{ translateX: slideAnim }] }, // Apply slide animation
+          ]}
         >
-          <View style={styles.logoutModalOverlay}>
-            <View style={styles.logoutModalContent}>
-              <Text style={styles.confirmationText}>
-                Do you want to log out your account?
-              </Text>
-              <View style={styles.confirmationButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setShowLogoutConfirmation(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.confirmButton} onPress={handleLogout}>
-                  <Text style={styles.confirmButtonText}>Yes</Text>
-                </TouchableOpacity>
+          <Ionicons name="person-circle" size={100} color="#3C096C" style={styles.profileIcon} />
+          <Text style={styles.profileText1}>
+            Hello, {userName ? userName : 'User'}! {/* Display the user's name here */}
+          </Text>
+          <Text style={styles.profileText2}>
+            {userEmail ? userEmail : 'Not Available'} {/* Display the user's email here */}
+          </Text>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => setShowLogoutConfirmation(true)}
+          >
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+
+          {/* Logout Confirmation Modal */}
+          {showLogoutConfirmation && (
+            <Modal
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setShowLogoutConfirmation(false)}
+            >
+              <View style={styles.logoutModalOverlay}>
+                <View style={styles.logoutModalContent}>
+                  <Text style={styles.confirmationText}>
+                    Do you want to log out your account?
+                  </Text>
+                  <View style={styles.confirmationButtons}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => setShowLogoutConfirmation(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.confirmButton} onPress={handleLogout}>
+                      <Text style={styles.confirmButtonText}>Yes</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </Modal>
-      )}
-    </View>
-  </View>
-</Modal>
+            </Modal>
+          )}
+        </Animated.View>
+      </Modal>
 
       {/* Main Screen Content */}
       <View style={styles.screenContainer}>{renderScreen()}</View>
@@ -173,24 +225,27 @@ const handleLogout = async () => {
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-  
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-              <Text> Name for Your Deck:</Text>
-
+                <View style={styles.displayContainer}>
+                <Image
+                    style={styles.display}
+                    source={require("../../../assets/images/flashcard.png")}
+                    />
+                </View>
+                <Text style={styles.modalHeader}> Enter Name for Your Deck:</Text>
                   <View style={styles.action}>
                   <TextInput
-                      placeholder="Enter Deck Name"
+                      placeholder="Science, English, Math..."
                       style={styles.textInput}
                       value={deckTitle}
                       onChangeText={setDeckTitle}
                   />
                   </View>
-
                   <TouchableOpacity style={styles.modalOption} onPress={addDeck}>
-                  <Ionicons name="albums-outline" size={20} color="#5A189A" />
+                  <Ionicons name="albums-outline" size={20} color="#fff" />
                   <Text style={styles.modalOptionText}>Add Deck</Text>
                   </TouchableOpacity>
 
@@ -236,17 +291,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 10,
+    paddingTop: 30,
+    paddingLeft: 20,
+    paddingRight: 20,
     paddingHorizontal: 10,
     backgroundColor: '#3C096C',
-    height: 50,
+    height: 100,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  displayContainer: {
+    width: '100%',
+    height: 150, // Set a height that accommodates the image
+    alignItems: 'center',
+    justifyContent: 'center',
+  },  
+  display: {
+    height: 120,
+    width: 120,
+    resizeMode: 'contain', // Ensures the entire image fits within the bounds
+  },  
+  logo:{
+    height: 18,
+    width: 18,
+    marginRight: 10,
+    marginTop: 4,
+  },
   logoText: {
-    fontSize: 24,
+    fontSize: 20,
     color: 'white',
     fontWeight: 'bold',
   },
@@ -267,32 +341,38 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 20,
     width: '80%',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalHeader:{
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+    color: '#5A189A'
   },
   modalOption: {
+    flexDirection: 'row',
+    backgroundColor: '#3C096C',
     padding: 10,
-    marginVertical: 10,
-    width: '100%',
+    marginVertical: 16,
+    width: '70%',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
   },
-  modalOptionText: { fontSize: 16, fontWeight: 'bold', color: '#5A189A' },
+  modalOptionText: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginLeft: 4, },
   action: {
     flexDirection: 'row',
-    paddingTop: 14,
-    paddingBottom: 3,
-    marginTop: 15,
-
+    marginTop: 16,
     paddingHorizontal: 15,
-
     borderWidth: 1,
     borderColor: '#420475',
-    borderRadius: 50,
+    borderRadius: 4,
   },
   textInput: {
     flex: 1,
-    marginTop: -12,
     color: '#05375a',
   },
   profileModalContainer: {
@@ -317,14 +397,21 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   profileIcon: {
-    marginBottom: -4, // Space between the icon and the text
+    marginBottom: -2, // Space between the icon and the text
   },
-  profileText: {
-    fontSize: 15,
+  profileText1: {
+    fontSize: 20,
+    marginBottom: 2,
+    color: '#3C096C',
+    fontWeight: 'bold',
+  },
+  profileText2: {
+    fontSize: 14,
     marginBottom: 10,
+    color: 'gray',
   },
   logoutButton: {
-    backgroundColor: 'red', 
+    backgroundColor: '#97233F', 
     padding: 10,
     borderRadius: 5,
     marginTop: 20,

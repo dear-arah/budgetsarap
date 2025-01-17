@@ -9,7 +9,7 @@ const {
 import {useNavigation} from '@react-navigation/native';
 import styles from './style';
 import Feather from 'react-native-vector-icons/Feather';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { Ionicons } from '@expo/vector-icons';
 import {useState} from 'react';
 import axios from 'axios';
 import { Alert } from 'react-native';
@@ -104,17 +104,19 @@ function SignUpPage() {
   return (
     <ScrollView
     keyboardShouldPersistTaps={true}>
-
-    <View style={{backgroundColor: 'white'}}>
-      <View style={styles.logoContainer}>
-        <Image
-          style={styles.logo}
-          source={require('../../assets/images/Qlogo.png')}
-        />
-      </View> 
-      <View style={styles.loginContainer}>
+    <View style={styles.mainContainer}>
+    <View style={styles.headerContainer}>
+          <View style={styles.signuplogoContainer}>
+            <Image
+              style={styles.logo}
+              source={require("../../assets/images/Qlogo.png")}
+            />
+          </View>
+        </View>
+      <View style={styles.signupContainer}>
         <Text style={styles.text_header}> Sign Up</Text>
         <View style={styles.action}>
+          <Ionicons name="person-outline" size={18} color="#420475" style={styles.smallIcon}/>
           <TextInput placeholder="Full Name" style={styles.textInput} 
           onChange={e=>handleNameChange(e)}/>
 
@@ -134,6 +136,7 @@ function SignUpPage() {
 
 
         <View style={styles.action}>
+        <Ionicons name="mail-outline" size={18} color="#420475" style={styles.smallIcon}/>
           <TextInput placeholder="Email" style={styles.textInput}
           onChange={e=>handleEmail(e)}/>
 
@@ -152,6 +155,7 @@ function SignUpPage() {
         )}
 
         <View style={styles.action}>
+          <Ionicons name="call-outline" size={18} color="#420475" style={styles.smallIcon}/>
           <TextInput placeholder="Mobile Number" style={styles.textInput} 
           onChange={e => handleMobile(e)}
           maxLength={11}
@@ -173,6 +177,7 @@ function SignUpPage() {
 
 
         <View style={styles.action}>
+          <Ionicons name="lock-closed-outline" size={18} color="#420475" style={styles.smallIcon}/>
           <TextInput placeholder="Password" style={styles.textInput}
           onChange={e => handlePassword(e)}
           secureTextEntry={showPassword}
@@ -212,8 +217,7 @@ function SignUpPage() {
             marginRight: 10,
           }}>
         </View>
-      </View>
-      <View style={styles.button}>
+        <View style={styles.button}>
         <TouchableOpacity style={styles.inBut}
         onPress={()=>handleSubmit()}>
           <View>
@@ -223,12 +227,12 @@ function SignUpPage() {
         
         <TouchableOpacity style={styles.inBut3}
         onPress={() => navigation.navigate('Login')}>
-          <View>
-            <Text style={styles.textSign2}>Login</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.textSign2}>Login</Text>
+              <Ionicons name="arrow-forward" size={20} color="#420475" style={styles.rightArrow}/>
           </View>
-          <Feather name="arrow-right" color="#420475" style={styles.rightArrow} />
         </TouchableOpacity>
-       
+      </View>
       </View>
     </View>
     </ScrollView>

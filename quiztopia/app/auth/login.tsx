@@ -9,10 +9,10 @@ const {
 } = require("react-native");
 import { useNavigation } from "@react-navigation/native";
 import styles from "./style";
-import Feather from "react-native-vector-icons/Feather";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function LoginPage() {
   const navigation = useNavigation();
@@ -23,31 +23,34 @@ function LoginPage() {
     const userData = { email, password };
 
     axios
-      .post("http://192.168.1.6:3000/login-user", userData)
-      .then((res) => {
-        console.log(res.data);
-        if (res.data.status === "ok") {
+    .post("http://192.168.1.9:3000/login-user", userData)
+    .then(async (res) => {
+      console.log(res.data);
+      if (res.data.status === "ok") {
+        // Store the email in AsyncStorage
+        try {
+          await AsyncStorage.setItem("userEmail", email);
           Alert.alert("Logged In Successfully!");
           navigation.navigate("Tabs");
-        } else {
-          Alert.alert(
-            "Login Failed",
-            res.data.data || "Something went wrong."
-          );
+        } catch (err) {
+          console.error("Error storing email in AsyncStorage:", err);
+          Alert.alert("Error", "Something went wrong. Please try again.");
         }
-      })
-      .catch((err) => {
-        console.error(err);
-        Alert.alert(
-          "Login Failed",
-          "Unable to log in. Please try again later."
-        );
-      });
+      } else {
+        Alert.alert("Login Failed", res.data.data || "Something went wrong.");
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      Alert.alert(
+        "Login Failed",
+        "Unable to log in. Please try again later."
+      );
+    });
   }
 
   return (
     <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps={"always"}
     >
       <View style={styles.mainContainer}>
@@ -65,7 +68,7 @@ function LoginPage() {
         <View style={styles.loginContainer}>
           <Text style={styles.text_header}>Login</Text>
           <View style={styles.action}>
-            <FontAwesome name="user-o" color="#420475" style={styles.smallIcon} />
+          <Ionicons name="person-outline" size={18} color="#420475" style={styles.smallIcon}/>
             <TextInput
               placeholder="Mobile or Email"
               style={styles.textInput}
@@ -73,18 +76,16 @@ function LoginPage() {
             />
           </View>
           <View style={styles.action}>
-            <FontAwesome name="lock" color="#420475" style={styles.smallIcon} />
+          <Ionicons name="lock-closed-outline" size={18} color="#420475" style={styles.smallIcon}/>
             <TextInput
               placeholder="Password"
               style={styles.textInput}
               onChange={(e) => setPassword(e.nativeEvent.text)}
             />
           </View>
-        </View>
 
         {/* Buttons */}
-        </View>
-      <View style={styles.button}>
+          <View style={styles.button}>
         <TouchableOpacity style={styles.inBut} onPress={()=>handleSubmit()}>
           <View>
             <Text style={styles.textSign}>Log in</Text>
@@ -95,11 +96,19 @@ function LoginPage() {
         onPress={() => navigation.navigate('SignUp')}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={styles.textSign2}>Sign Up</Text>
-              <Feather name="arrow-right" color="#420475" style={styles.rightArrow} />
-            </View>
+              <Ionicons name="arrow-forward" size={20} color="#420475" style={styles.rightArrow}/>
+          </View>
           
         </TouchableOpacity>
     </View>
+
+
+
+        </View>
+
+        
+        </View>
+      
     </ScrollView>
   );
 }

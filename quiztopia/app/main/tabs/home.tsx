@@ -11,20 +11,23 @@ function HomePage() {
   const [favorites, setFavorites] = useState([]);
   const [recentActivity, setRecentActivity] = useState(null); // Only one deck at a time
   const [email, setEmail] = useState('');
+  const [loadingDecks, setLoadingDecks] = useState(true); // New state
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [deckToDelete, setDeckToDelete] = useState(null); // To store the deck that is being deleted
 
   const fetchDecks = useCallback(async () => {
     if (!email) return;
-
+    setLoadingDecks(true); // Start loading
     try {
-      const response = await axios.get('http://192.168.1.6:3000/api/decks', { params: { email } });
+      const response = await axios.get('http://192.168.1.9:3000/api/decks', { params: { email } });
       const decks = response.data.data;
       setMyDecks(decks);
       setFavorites(decks.filter((deck) => deck.isFavorite));
     } catch (err) {
       console.error('Error fetching decks:', err.response?.data || err.message);
+    } finally {
+      setLoadingDecks(false); // End loading
     }
   }, [email]);
 
@@ -33,8 +36,17 @@ function HomePage() {
       const storedEmail = await AsyncStorage.getItem('userEmail');
       if (storedEmail) setEmail(storedEmail);
     };
+
+    const loadRecentActivity = async () => {
+      const storedActivity = await AsyncStorage.getItem('recentActivity');
+      if (storedActivity) setRecentActivity(JSON.parse(storedActivity));
+    };
+
     fetchUserEmail();
+    loadRecentActivity();
   }, []);
+
+
 
   useEffect(() => {
     fetchDecks();
@@ -42,7 +54,7 @@ function HomePage() {
 
   const toggleFavorite = async (deckId) => {
     try {
-      const response = await axios.patch(`http://192.168.1.6:3000/api/decks/${deckId}/toggle-favorite`, { email });
+      const response = await axios.patch(`http://192.168.1.9:3000/api/decks/${deckId}/toggle-favorite`, { email });
       const updatedDeck = response.data.data;
 
       setMyDecks((prev) =>
@@ -58,14 +70,18 @@ function HomePage() {
           ? { ...prev, isFavorite: updatedDeck.isFavorite }
           : prev
       );
+      await AsyncStorage.setItem('recentActivity', JSON.stringify(recentActivity));
     } catch (err) {
       console.error('Error toggling favorite:', err.message);
     }
   };
 
-  const navigateToDeck = (deckId) => {
+  const navigateToDeck = async (deckId) => {
     const deck = myDecks.find((d) => d._id === deckId);
-    if (deck) setRecentActivity(deck);
+    if (deck) {
+      setRecentActivity(deck);
+      await AsyncStorage.setItem('recentActivity', JSON.stringify(deck));
+    }
     navigation.navigate('FlashcardPage', { deckId });
   };
 
@@ -76,7 +92,7 @@ function HomePage() {
     }
   
     try {
-      await axios.delete(`http://192.168.1.6:3000/api/decks/${deckToDelete._id}`, {
+      await axios.delete(`http://192.168.1.9:3000/api/decks/${deckToDelete._id}`, {
         data: { email } // Send the email in the request body
       });
   
@@ -126,18 +142,17 @@ function HomePage() {
                     <Ionicons
                       name={item.isFavorite ? 'star' : 'star-outline'}
                       size={24}
-                      color={item.isFavorite ? 'gold' : 'grey'}
+                      color={item.isFavorite ? '#FF9100' : 'grey'}
                       onPress={() => toggleFavorite(item._id)}
                     />
                   
-
                     <View style={styles.cardTitleContainer}>
                       <Text style={styles.cardTitle}>{item.title}</Text>
                       <Text style={styles.cardSubtitle}>{item.flashcards.length} cards</Text>
                     </View>
                     <TouchableOpacity onPress={() => handleDeleteClick(recentActivity)}>
-  <Ionicons name="trash-bin" size={30} color="grey" />
-</TouchableOpacity>
+                      <Ionicons name="trash-bin" size={24} color="grey" />
+                    </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
                 
@@ -145,7 +160,9 @@ function HomePage() {
             )}
           />
         ) : (
-          <Text>No decks added to favorites.</Text>
+          <View style={styles.card}> 
+              <Text> No deck added to favorites.</Text>
+          </View>
         )}
       </View>
 
@@ -164,7 +181,7 @@ function HomePage() {
                   <Ionicons
                     name={recentActivity.isFavorite ? 'star' : 'star-outline'}
                     size={24}
-                    color={recentActivity.isFavorite ? 'gold' : 'grey'}
+                    color={recentActivity.isFavorite ? '#FF9100' : 'grey'}
                   />
                 </TouchableOpacity>
                 <View style={styles.cardTitleContainer}>
@@ -172,16 +189,20 @@ function HomePage() {
                   <Text style={styles.cardSubtitle}>{recentActivity.flashcards.length} cards</Text>
                 </View>
                 <TouchableOpacity onPress={() => handleDeleteClick(recentActivity)}>
-  <Ionicons name="trash-bin" size={30} color="grey" />
-</TouchableOpacity>
+                <Ionicons name="trash-bin" size={24} color="grey" />
+              </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
         ) : (
-          <Text>No recent activity.</Text>
+          <View style={styles.card}> 
+              <Text>No recent activity.</Text>
+          </View>
+          
         )}
       </View>
 
+      {/* My Decks */}
       <Text style={styles.header}>My Decks ({myDecks.length})</Text>
       <FlatList
         data={myDecks}
@@ -196,7 +217,7 @@ function HomePage() {
                 <Ionicons
                   name={item.isFavorite ? 'star' : 'star-outline'}
                   size={24}
-                  color={item.isFavorite ? 'gold' : 'grey'}
+                  color={item.isFavorite ? '#FF9100' : 'grey'}
                   onPress={() => toggleFavorite(item._id)}
                 />
                 <View style={styles.cardTitleContainer}>
@@ -204,7 +225,7 @@ function HomePage() {
                   <Text style={styles.cardSubtitle}>{item.flashcards.length} cards</Text>
                 </View>
                 <TouchableOpacity onPress={() => handleDeleteClick(item)}>
-                  <Ionicons name="trash-bin" size={30} color="grey" />
+                  <Ionicons name="trash-bin" size={24} color="grey" />
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -309,7 +330,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   confirmButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#97233F',
     padding: 10,
     borderRadius: 5,
   },
